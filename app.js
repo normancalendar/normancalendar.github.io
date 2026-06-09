@@ -7,7 +7,7 @@ const supabase = window.supabase.createClient(
 );
 
 // ✅ HARDCODE ONE CALENDAR
-const CALENDAR_ID = "YOUR_CALENDAR_ID";
+const CALENDAR_ID = "12db36a9-ea06-4b2e-adb3-fc04541d3d35";
 
 const state = {
   currentDate: new Date(),
