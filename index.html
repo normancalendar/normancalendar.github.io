@@ -1,46 +1,55 @@
-<div id="app">
-  <header class="topbar">
-    <div class="brand">
-      <div class="brand-mark"></div>
-      <div>
+<body>
+  <div id="app">
+    
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark"></div>
         <h1>Shared Calendar</h1>
-        <p>Modern team scheduling</p>
       </div>
-    </div>
 
-    <div class="topbar-actions">
-      <button id="newEventBtn" class="btn btn-primary" disabled>New event</button>
-      <button id="authBtn" class="btn btn-secondary">Sign in</button>
-    </div>
-  </header>
+      <button id="newEventBtn" class="btn-primary">+ New</button>
+    </header>
 
-  <main class="layout">
-    <aside class="sidebar">
-      <section class="panel">
-        <h2>Your calendars</h2>
-        <div id="calendarList" class="calendar-list"></div>
-      </section>
-
-      <section class="panel">
-        <h2>User</h2>
-        <div id="userInfo" class="user-info">Not signed in</div>
-      </section>
-    </aside>
-
-    <section class="main-content">
-      <div class="panel controls-panel">
+    <main>
+      <div class="controls-panel">
         <div class="view-controls">
-          <button id="prevBtn">←</button>
-          <button id="todayBtn">Today</button>
-          <button id="nextBtn">→</button>
+          <button id="prevBtn" class="icon-btn">←</button>
+          <button id="todayBtn" class="btn-secondary">Today</button>
+          <button id="nextBtn" class="icon-btn">→</button>
           <h2 id="currentLabel"></h2>
         </div>
       </div>
 
       <div class="calendar-panel">
-        <div id="calendarHeader"></div>
-        <div id="calendarGrid"></div>
+        <div id="calendarHeader" class="calendar-grid-header"></div>
+        <div id="calendarGrid" class="calendar-grid"></div>
       </div>
-    </section>
-  </main>
-</div>
+    </main>
+  </div>
+
+  <!-- EVENT MODAL -->
+  <div id="eventModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modalTitle">New Event</h3>
+        <button id="closeModalBtn">✕</button>
+      </div>
+
+      <form id="eventForm" class="event-form">
+        <input type="hidden" id="eventId" />
+
+        <input id="titleInput" type="text" placeholder="Event title" required />
+        <textarea id="descriptionInput" placeholder="Description"></textarea>
+
+        <input id="startInput" type="datetime-local" required />
+        <input id="endInput" type="datetime-local" required />
+
+        <div class="modal-actions">
+          <button type="button" id="deleteBtn" class="btn-secondary hidden">Delete</button>
+          <button type="button" id="cancelBtn" class="btn-secondary">Cancel</button>
+          <button type="submit" class="btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
