@@ -1,0 +1,271 @@
+/* RESET */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* BASE THEME */
+:root {
+  --bg: #f6f7fb;
+  --panel: #ffffff;
+  --border: #e5e7eb;
+
+  --text: #0f172a;
+  --muted: #6b7280;
+
+  --primary: #4f46e5;
+  --primary-soft: #eef2ff;
+
+  --radius: 14px;
+  --shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+}
+
+/* BODY */
+body {
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  background: linear-gradient(180deg, #f9fafb, #f1f5f9);
+  color: var(--text);
+}
+
+/* APP WRAP */
+#app {
+  padding: 24px;
+  min-height: 100vh;
+}
+
+/* TOPBAR */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.brand {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.brand-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+}
+
+.brand h1 {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+/* CONTROLS PANEL */
+.controls-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.view-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.view-controls h2 {
+  margin-left: 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* BUTTONS */
+button {
+  border: none;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+}
+
+.btn-secondary {
+  background: #f1f5f9;
+}
+
+.btn-secondary:hover {
+  background: #e2e8f0;
+}
+
+.icon-btn {
+  background: #eef2ff;
+  padding: 6px 10px;
+}
+
+.icon-btn:hover {
+  background: #e0e7ff;
+}
+
+/* CALENDAR CONTAINER */
+.calendar-panel {
+  background: var(--panel);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 12px;
+  box-shadow: var(--shadow);
+}
+
+/* WEEK HEADER */
+.calendar-grid-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 6px;
+}
+
+.calendar-grid-header div {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--muted);
+  padding: 8px 0;
+  font-weight: 500;
+}
+
+/* MONTH GRID */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+/* DAY CELL */
+.day-cell {
+  min-height: 110px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.day-cell:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+/* OTHER MONTH DAYS */
+.day-cell.other-month {
+  opacity: 0.35;
+}
+
+/* TODAY */
+.day-cell.today {
+  border: 2px solid var(--primary);
+}
+
+/* DAY NUMBER */
+.day-number {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* EVENTS */
+.event-chip {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: white;
+  font-size: 0.7rem;
+  padding: 4px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.event-chip:hover {
+  transform: scale(1.03);
+}
+
+/* MODAL */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 420px;
+  background: white;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.modal-header h3 {
+  font-size: 1rem;
+}
+
+/* FORM */
+.event-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.event-form input,
+.event-form textarea {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+}
+
+/* ACTIONS */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* HIDDEN */
+.hidden {
+  display: none !important;
+}
+
+/* RESPONSIVE */
+@media (max-width: 800px) {
+  #app {
+    padding: 12px;
+  }
+
+  .calendar-grid {
+    gap: 4px;
+  }
+
+  .day-cell {
+    min-height: 90px;
+  }
+}
