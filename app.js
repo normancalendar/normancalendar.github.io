@@ -126,9 +126,14 @@ function renderWeek() {
       .filter(e => sameDay(new Date(e.start_at), day))
       .forEach(e => {
         const item = document.createElement("div");
-        item.textContent = e.title;
-        item.style.background = e.color || "#3b82f6";
         item.className = "event";
+        item.style.background = e.color || "#3b82f6";
+
+        item.innerHTML = `
+          <div class="event-title">${e.title}</div>
+          ${e.details ? `<div class="event-details">${e.details}</div>` : ""}
+      `;
+
 
         item.addEventListener("click", () => openEditModal(e));
 
