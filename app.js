@@ -74,7 +74,7 @@ async function init() {
   bindEvents();
   renderWeek();
   await fetchEventsForVisibleWeek();
-  setupRealtime();
+  // setupRealtime();
 }
 
 // ===== EVENTS =====
@@ -180,6 +180,8 @@ function renderWeek() {
 // ===== DATA =====
 
 async function fetchEventsForVisibleWeek() {
+  console.log("FETCH CALLED ✅");
+
   try {
     setStatus("Syncing…");
 
@@ -189,14 +191,15 @@ async function fetchEventsForVisibleWeek() {
     const { data, error } = await supabaseClient
       .from(TABLE_NAME)
       .select("*")
-      .lt("start_at", end.toISOString())
-      .gt("end_at", start.toISOString());
+      .gte("start_at", start.toISOString())
+      .lt("start_at", end.toISOString());
 
     if (error) throw error;
 
     state.events = data || [];
     renderWeek();
     setStatus("Live");
+
   } catch (error) {
     console.error(error);
   }
