@@ -368,6 +368,11 @@ p {
   );
 }
 
+.time-column {
+  border-right: 1px solid var(--color-divider);
+}
+
+
 .day-column:hover {
   background-color: color-mix(in srgb, var(--color-primary-soft) 40%, transparent);
 }
