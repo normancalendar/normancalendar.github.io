@@ -22,6 +22,30 @@ function addDays(date, days) {
   return d;
 }
 
+function countEventsInWeek(startDate) {
+  const start = new Date(startDate);
+  const end = addDays(start, 7);
+
+  return state.events.filter(e => {
+    const eventDate = new Date(e.start_at);
+    return eventDate >= start && eventDate < end;
+  }).length;
+}
+
+function updateWeekBadges() {
+  const prevWeek = addDays(state.currentWeekStart, -7);
+  const nextWeek = addDays(state.currentWeekStart, 7);
+
+  const prevCount = countEventsInWeek(prevWeek);
+  const nextCount = countEventsInWeek(nextWeek);
+
+  const prevBadge = document.getElementById("prevBadge");
+  const nextBadge = document.getElementById("nextBadge");
+
+  prevBadge.textContent = prevCount > 0 ? prevCount : "";
+  nextBadge.textContent = nextCount > 0 ? nextCount : "";
+}
+
 function formatDate(date) {
   return date.toISOString().split("T")[0];
 }
@@ -91,6 +115,8 @@ function bindEvents() {
     renderWeek();
     await fetchEventsForVisibleWeek();
   });
+
+  
 
   els.todayBtn.addEventListener("click", async () => {
     state.currentWeekStart = startOfWeek(new Date());
@@ -175,6 +201,8 @@ function renderWeek() {
   }
 
   els.weekLabel.textContent = "Week of " + state.currentWeekStart.toDateString();
+
+  updateWeekBadges();
 }
 
 // ===== DATA =====
