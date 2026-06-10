@@ -116,28 +116,36 @@ function renderWeek() {
   els.weekGrid.appendChild(spacer);
 
   for (let i = 0; i < 7; i++) {
-    const day = addDays(state.currentWeekStart, i);
+  const day = addDays(state.currentWeekStart, i);
 
-    col.addEventListener("click", (e) => {
-  // prevent clicking an existing event
-  if (e.target.closest(".event")) return;
+  // ✅ CREATE COLUMN FIRST (this was missing)
+  const col = document.createElement("div");
+  col.className = "day-column";
 
-  openCreateModal();
+  // ✅ highlight today
+  if (sameDay(day, new Date())) {
+    col.classList.add("today");
+  }
 
-  const clickedDate = new Date(day);
+  const header = document.createElement("div");
+  header.className = "day-header";
+  header.textContent = day.toDateString();
+  col.appendChild(header);
 
-  // default time = 09:00
-  clickedDate.setHours(9, 0);
+  // ✅ NOW attach click handler (correct placement)
+  col.addEventListener("click", (e) => {
+    if (e.target.closest(".event")) return;
 
-  els.startInput.value = clickedDate.toISOString().slice(0, 16);
+    openCreateModal();
 
-  clickedDate.setHours(10, 0);
-  els.endInput.value = clickedDate.toISOString().slice(0, 16);
-});
+    const clickedDate = new Date(day);
 
-if (sameDay(day, new Date())) {
-  col.classList.add("today");
-}
+    clickedDate.setHours(9, 0);
+    els.startInput.value = clickedDate.toISOString().slice(0, 16);
+
+    clickedDate.setHours(10, 0);
+    els.endInput.value = clickedDate.toISOString().slice(0, 16);
+  });
 
     const header = document.createElement("div");
     header.className = "day-header";
