@@ -111,6 +111,10 @@ function bindEvents() {
 function renderWeek() {
   els.weekGrid.innerHTML = "";
 
+  const spacer = document.createElement("div");
+  spacer.className = "time-column";
+  els.weekGrid.appendChild(spacer);
+
   for (let i = 0; i < 7; i++) {
     const day = addDays(state.currentWeekStart, i);
 
