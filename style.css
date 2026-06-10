@@ -416,6 +416,27 @@ p {
   z-index: 1;
 }
 
+.event {
+  margin: 4px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  color: white;
+  overflow: hidden;
+}
+
+.event-title {
+  font-weight: 700;
+  font-size: var(--text-sm);
+  line-height: 1.2;
+}
+
+.event-details {
+  font-size: var(--text-xs);
+  margin-top: 2px;
+  opacity: 0.85;
+  line-height: 1.2;
+}
+
 .event-time {
   font-size: var(--text-xs);
   opacity: 0.88;
