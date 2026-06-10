@@ -10,10 +10,13 @@ const supabaseClient = window.supabase.createClient(
       persistSession: false,
       autoRefreshToken: false,
       detectSessionInUrl: false
+    },
+    realtime: {
+      enabled: false   
     }
   }
-
 );
+
 
 function startOfWeek(date) {
   const d = new Date(date);
