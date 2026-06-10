@@ -102,3 +102,4 @@ async function fetchEventsForVisibleWeek() {
     setStatus("Live");
   } catch (error) {
     console.error(error);
+  }
