@@ -103,3 +103,4 @@ async function fetchEventsForVisibleWeek() {
   } catch (error) {
     console.error(error);
   }
+}  
