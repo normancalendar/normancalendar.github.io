@@ -1,294 +1,433 @@
 const SUPABASE_URL = "https://zlldjmfzcuawrprsqvmn.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsbGRqbWZ6Y3Vhd3JwcnNxdm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDk5MDUsImV4cCI6MjA5NjU4NTkwNX0.QhUkbTA3q33QiCfywvZ6xbS4ru_InCdYfwZ_be6DSdM";
+const TABLE_NAME = "events";
 
-const supabase = window.supabase.createClient(
-  https://zlldjmfzcuawrprsqvmn.supabase.co,
-  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsbGRqbWZ6Y3Vhd3JwcnNxdm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDk5MDUsImV4cCI6MjA5NjU4NTkwNX0.QhUkbTA3q33QiCfywvZ6xbS4ru_InCdYfwZ_be6DSdM
-);
-
-// 🔥 IMPORTANT: set this
-const CALENDAR_ID = "12db36a9-ea06-4b2e-adb3-fc04541d3d35";
+const supabase = window.supabase.createClient(https://zlldjmfzcuawrprsqvmn.supabase.co, eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsbGRqbWZ6Y3Vhd3JwcnNxdm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDk5MDUsImV4cCI6MjA5NjU4NTkwNX0.QhUkbTA3q33QiCfywvZ6xbS4ru_InCdYfwZ_be6DSdM);
 
 const state = {
-  currentDate: new Date(),
-  events: []
+  currentWeekStart: startOfWeek(new Date()),
+  events: [],
+  activeEventId: null,
+  realtimeChannel: null,
+  theme: window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
 };
 
 const els = {
-  newEventBtn: document.getElementById("newEventBtn"),
-  calendarHeader: document.getElementById("calendarHeader"),
-  calendarGrid: document.getElementById("calendarGrid"),
-  currentLabel: document.getElementById("currentLabel"),
-  prevBtn: document.getElementById("prevBtn"),
-  nextBtn: document.getElementById("nextBtn"),
+  weekLabel: document.getElementById("weekLabel"),
+  weekGrid: document.getElementById("weekGrid"),
+  syncStatus: document.getElementById("syncStatus"),
+  prevWeekBtn: document.getElementById("prevWeekBtn"),
+  nextWeekBtn: document.getElementById("nextWeekBtn"),
   todayBtn: document.getElementById("todayBtn"),
-
-  eventModal: document.getElementById("eventModal"),
-  closeModalBtn: document.getElementById("closeModalBtn"),
-  cancelBtn: document.getElementById("cancelBtn"),
-  deleteBtn: document.getElementById("deleteBtn"),
-
-  eventForm: document.getElementById("eventForm"),
+  newEventBtn: document.getElementById("newEventBtn"),
+  themeToggle: document.getElementById("themeToggle"),
+  modal: document.getElementById("eventModal"),
+  form: document.getElementById("eventForm"),
+  modalTitle: document.getElementById("modalTitle"),
   eventId: document.getElementById("eventId"),
   titleInput: document.getElementById("titleInput"),
-  descriptionInput: document.getElementById("descriptionInput"),
+  detailsInput: document.getElementById("detailsInput"),
   startInput: document.getElementById("startInput"),
-  endInput: document.getElementById("endInput")
+  endInput: document.getElementById("endInput"),
+  colorInput: document.getElementById("colorInput"),
+  formError: document.getElementById("formError"),
+  deleteBtn: document.getElementById("deleteBtn"),
+  cancelBtn: document.getElementById("cancelBtn"),
+  closeModalBtn: document.getElementById("closeModalBtn")
 };
 
-const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+document.documentElement.setAttribute("data-theme", state.theme);
 
-/* ---------- DATE HELPERS ---------- */
+init();
 
-function formatMonthLabel(date) {
+async function init() {
+  bindEvents();
+  renderWeek();
+  await fetchEventsForVisibleWeek();
+  setupRealtime();
+}
+
+function bindEvents() {
+  els.prevWeekBtn.addEventListener("click", async () => {
+    state.currentWeekStart = addDays(state.currentWeekStart, -7);
+    renderWeek();
+    await fetchEventsForVisibleWeek();
+  });
+
+  els.nextWeekBtn.addEventListener("click", async () => {
+    state.currentWeekStart = addDays(state.currentWeekStart, 7);
+    renderWeek();
+    await fetchEventsForVisibleWeek();
+  });
+
+  els.todayBtn.addEventListener("click", async () => {
+    state.currentWeekStart = startOfWeek(new Date());
+    renderWeek();
+    await fetchEventsForVisibleWeek();
+  });
+
+  els.newEventBtn.addEventListener("click", () => {
+    openCreateModal();
+  });
+
+  els.themeToggle.addEventListener("click", () => {
+    state.theme = state.theme === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", state.theme);
+  });
+
+  els.form.addEventListener("submit", handleSaveEvent);
+  els.deleteBtn.addEventListener("click", handleDeleteEvent);
+  els.cancelBtn.addEventListener("click", closeModal);
+  els.closeModalBtn.addEventListener("click", closeModal);
+
+  els.modal.addEventListener("click", (event) => {
+    const rect = els.modal.getBoundingClientRect();
+    const inDialog =
+      event.clientX >= rect.left &&
+      event.clientX <= rect.right &&
+      event.clientY >= rect.top &&
+      event.clientY <= rect.bottom;
+
+    if (!inDialog) {
+      closeModal();
+    }
+  });
+}
+
+async function fetchEventsForVisibleWeek() {
+  try {
+    setStatus("Syncing…");
+    const start = new Date(state.currentWeekStart);
+    const end = addDays(start, 7);
+
+    const { data, error } = await supabase
+      .from(TABLE_NAME)
+      .select("*")
+      .lt("start_at", end.toISOString())
+      .gt("end_at", start.toISOString())
+      .order("start_at", { ascending: true });
+
+    if (error) throw error;
+
+    state.events = data || [];
+    renderWeek();
+    setStatus("Live");
+  } catch (error) {
+    console.error(error);
+    setStatus("Sync failed");
+  }
+}
+
+function setupRealtime() {
+  state.realtimeChannel = supabase
+    .channel("shared-calendar-live")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: TABLE_NAME },
+      async () => {
+        await fetchEventsForVisibleWeek();
+      }
+    )
+    .subscribe((status, err) => {
+      if (status === "SUBSCRIBED") {
+        setStatus("Live");
+      }
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        console.error(status, err);
+        setStatus("Realtime error");
+      }
+    });
+}
+
+function renderWeek() {
+  const weekStart = state.currentWeekStart;
+  const weekEnd = addDays(weekStart, 6);
+  els.weekLabel.textContent = `${formatLongDate(weekStart)} – ${formatLongDate(weekEnd)}`;
+
+  const grid = [];
+  grid.push(`<div class="time-corner"></div>`);
+
+  for (let i = 0; i < 7; i++) {
+    const date = addDays(weekStart, i);
+    const isToday = isSameDay(date, new Date());
+    grid.push(`
+      <div class="day-header ${isToday ? "today" : ""}">
+        <strong>${date.toLocaleDateString([], { weekday: "long" })}</strong>
+        <span>${date.toLocaleDateString([], { day: "numeric", month: "short" })}</span>
+      </div>
+    `);
+  }
+
+  for (let hour = 0; hour < 24; hour++) {
+    grid.push(`<div class="time-label">${String(hour).padStart(2, "0")}:00</div>`);
+
+    for (let day = 0; day < 7; day++) {
+      const slotDate = addDays(weekStart, day);
+      grid.push(`
+        <div class="day-column"
+             data-day-index="${day}"
+             data-hour="${hour}"
+             data-date="${slotDate.toISOString()}"
+             aria-label="${slotDate.toDateString()} ${hour}:00"
+             tabindex="0"></div>
+      `);
+    }
+  }
+
+  els.weekGrid.innerHTML = `
+    ${grid.join("")}
+    <div class="events-layer">${renderEventColumns()}</div>
+  `;
+
+  els.weekGrid.querySelectorAll(".day-column").forEach((cell) => {
+    cell.addEventListener("dblclick", () => {
+      const date = new Date(cell.dataset.date);
+      date.setHours(Number(cell.dataset.hour), 0, 0, 0);
+      const end = new Date(date);
+      end.setHours(end.getHours() + 1);
+      openCreateModal(date, end);
+    });
+
+    cell.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        const date = new Date(cell.dataset.date);
+        date.setHours(Number(cell.dataset.hour), 0, 0, 0);
+        const end = new Date(date);
+        end.setHours(end.getHours() + 1);
+        openCreateModal(date, end);
+      }
+    });
+  });
+
+  els.weekGrid.querySelectorAll("[data-open-event]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const eventId = btn.dataset.openEvent;
+      const eventRecord = state.events.find((item) => String(item.id) === String(eventId));
+      if (eventRecord) openEditModal(eventRecord);
+    });
+  });
+}
+
+function renderEventColumns() {
+  const columns = [];
+  for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+    const left = `calc(${dayIndex} * ((100% - 72px) / 7))`;
+    columns.push(`
+      <div class="day-events-column" style="left:${left};">
+        ${renderEventsForDay(dayIndex)}
+      </div>
+    `);
+  }
+  return columns.join("");
+}
+
+function renderEventsForDay(dayIndex) {
+  const dayStart = addDays(state.currentWeekStart, dayIndex);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = addDays(dayStart, 1);
+
+  const dayEvents = state.events.filter((event) => {
+    const start = new Date(event.start_at);
+    return start >= dayStart && start < dayEnd;
+  });
+
+  return dayEvents.map((event) => {
+    const start = new Date(event.start_at);
+    const end = new Date(event.end_at);
+
+    const startMinutes = start.getHours() * 60 + start.getMinutes();
+    const endMinutes = end.getHours() * 60 + end.getMinutes();
+    const duration = Math.max(endMinutes - startMinutes, 30);
+
+    const top = `${(startMinutes / 60) * 4}rem`;
+    const height = `${Math.max((duration / 60) * 4, 2.75)}rem`;
+
+    return `
+      <article class="event-card" style="top:${top};height:${height};background:${escapeHtml(event.color || "#01696f")}">
+        <button type="button" data-open-event="${event.id}" aria-label="Edit ${escapeHtml(event.title)}">
+          <div class="event-time">${formatTime(start)} – ${formatTime(end)}</div>
+          <div class="event-title">${escapeHtml(event.title)}</div>
+          ${event.details ? `<div class="event-details">${escapeHtml(event.details)}</div>` : ""}
+        </button>
+      </article>
+    `;
+  }).join("");
+}
+
+function openCreateModal(startDate = null, endDate = null) {
+  state.activeEventId = null;
+  els.modalTitle.textContent = "New event";
+  els.deleteBtn.classList.add("hidden");
+  els.formError.textContent = "";
+  els.form.reset();
+  els.eventId.value = "";
+
+  const start = startDate || roundToNextHour(new Date());
+  const end = endDate || new Date(start.getTime() + 60 * 60 * 1000);
+
+  els.titleInput.value = "";
+  els.detailsInput.value = "";
+  els.startInput.value = toDateTimeLocalValue(start);
+  els.endInput.value = toDateTimeLocalValue(end);
+  els.colorInput.value = "#01696f";
+
+  els.modal.showModal();
+}
+
+function openEditModal(eventRecord) {
+  state.activeEventId = eventRecord.id;
+  els.modalTitle.textContent = "Edit event";
+  els.deleteBtn.classList.remove("hidden");
+  els.formError.textContent = "";
+
+  els.eventId.value = eventRecord.id;
+  els.titleInput.value = eventRecord.title || "";
+  els.detailsInput.value = eventRecord.details || "";
+  els.startInput.value = toDateTimeLocalValue(new Date(eventRecord.start_at));
+  els.endInput.value = toDateTimeLocalValue(new Date(eventRecord.end_at));
+  els.colorInput.value = eventRecord.color || "#01696f";
+
+  els.modal.showModal();
+}
+
+function closeModal() {
+  els.modal.close();
+}
+
+async function handleSaveEvent(event) {
+  event.preventDefault();
+  els.formError.textContent = "";
+
+  const payload = {
+    title: els.titleInput.value.trim(),
+    details: els.detailsInput.value.trim(),
+    start_at: new Date(els.startInput.value).toISOString(),
+    end_at: new Date(els.endInput.value).toISOString(),
+    color: els.colorInput.value
+  };
+
+  if (!payload.title) {
+    els.formError.textContent = "Title is required.";
+    return;
+  }
+
+  if (new Date(payload.end_at) <= new Date(payload.start_at)) {
+    els.formError.textContent = "End time must be after start time.";
+    return;
+  }
+
+  try {
+    setStatus("Saving…");
+
+    if (state.activeEventId) {
+      const { error } = await supabase
+        .from(TABLE_NAME)
+        .update(payload)
+        .eq("id", state.activeEventId);
+
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from(TABLE_NAME)
+        .insert(payload);
+
+      if (error) throw error;
+    }
+
+    closeModal();
+    await fetchEventsForVisibleWeek();
+    setStatus("Live");
+  } catch (error) {
+    console.error(error);
+    els.formError.textContent = error.message || "Could not save event.";
+    setStatus("Save failed");
+  }
+}
+
+async function handleDeleteEvent() {
+  if (!state.activeEventId) return;
+
+  const confirmed = window.confirm("Delete this event?");
+  if (!confirmed) return;
+
+  try {
+    setStatus("Deleting…");
+
+    const { error } = await supabase
+      .from(TABLE_NAME)
+      .delete()
+      .eq("id", state.activeEventId);
+
+    if (error) throw error;
+
+    closeModal();
+    await fetchEventsForVisibleWeek();
+    setStatus("Live");
+  } catch (error) {
+    console.error(error);
+    els.formError.textContent = error.message || "Could not delete event.";
+    setStatus("Delete failed");
+  }
+}
+
+function setStatus(text) {
+  els.syncStatus.textContent = text;
+}
+
+function startOfWeek(date) {
+  const copy = new Date(date);
+  const day = copy.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  copy.setDate(copy.getDate() + diff);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+}
+
+function addDays(date, days) {
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + days);
+  return copy;
+}
+
+function isSameDay(a, b) {
+  return a.getFullYear() === b.getFullYear()
+    && a.getMonth() === b.getMonth()
+    && a.getDate() === b.getDate();
+}
+
+function roundToNextHour(date) {
+  const copy = new Date(date);
+  copy.setMinutes(0, 0, 0);
+  copy.setHours(copy.getHours() + 1);
+  return copy;
+}
+
+function formatLongDate(date) {
   return date.toLocaleDateString([], {
-    month: "long",
+    day: "numeric",
+    month: "short",
     year: "numeric"
   });
 }
 
-function sameDay(a, b) {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-}
-
-function getMonthGrid(date) {
-  const year = date.getFullYear();
-  const month = date.getMonth();
-
-  const firstDay = new Date(year, month, 1);
-  const start = new Date(firstDay);
-  start.setDate(start.getDate() - firstDay.getDay());
-
-  const days = [];
-
-  for (let i = 0; i < 42; i++) {
-    const d = new Date(start);
-    d.setDate(start.getDate() + i);
-    days.push(d);
-  }
-
-  return days;
-}
-
-/* ---------- LOAD EVENTS ---------- */
-
-async function loadEvents() {
-  const start = new Date(
-    state.currentDate.getFullYear(),
-    state.currentDate.getMonth(),
-    1
-  );
-
-  const end = new Date(
-    state.currentDate.getFullYear(),
-    state.currentDate.getMonth() + 1,
-    1
-  );
-
-  const { data, error } = await supabase
-    .from("events")
-    .select("*")
-    .eq("calendar_id", CALENDAR_ID)
-    .gte("start_at", start.toISOString())
-    .lt("start_at", end.toISOString())
-    .order("start_at", { ascending: true });
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  state.events = data || [];
-}
-
-/* ---------- RENDER ---------- */
-
-function renderHeader() {
-  els.calendarHeader.innerHTML = weekDays
-    .map(d => `<div>${d}</div>`)
-    .join("");
-}
-
-function eventsForDay(day) {
-  return state.events.filter(event =>
-    sameDay(new Date(event.start_at), day)
-  );
-}
-
-function renderCalendar() {
-  els.currentLabel.textContent = formatMonthLabel(state.currentDate);
-
-  const month = state.currentDate.getMonth();
-  const today = new Date();
-  const days = getMonthGrid(state.currentDate);
-
-  els.calendarGrid.innerHTML = days
-    .map(day => {
-      const isOther = day.getMonth() !== month;
-      const isToday = sameDay(day, today);
-      const events = eventsForDay(day);
-
-      return `
-        <div class="day-cell ${isOther ? "other-month" : ""} ${isToday ? "today" : ""}" data-date="${day.toISOString()}">
-          <div class="day-number">${day.getDate()}</div>
-
-          ${events.map(e => `
-            <div class="event-chip" data-id="${e.id}">
-              ${e.title}
-            </div>
-          `).join("")}
-        </div>
-      `;
-    })
-    .join("");
-
-  attachCalendarEvents();
-}
-
-/* ---------- INTERACTIONS ---------- */
-
-function attachCalendarEvents() {
-  document.querySelectorAll(".day-cell").forEach(cell => {
-    cell.addEventListener("click", () => {
-      openNewEvent(cell.dataset.date);
-    });
-  });
-
-  document.querySelectorAll(".event-chip").forEach(chip => {
-    chip.addEventListener("click", e => {
-      e.stopPropagation();
-      const id = chip.dataset.id;
-      const event = state.events.find(ev => ev.id === id);
-      if (event) openEditEvent(event);
-    });
+function formatTime(date) {
+  return date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit"
   });
 }
 
-/* ---------- MODAL ---------- */
-
-function openModal() {
-  els.eventModal.classList.remove("hidden");
+function toDateTimeLocalValue(date) {
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-function closeModal() {
-  els.eventModal.classList.add("hidden");
-  els.eventForm.reset();
-  els.eventId.value = "";
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&")
+    .replaceAll("<", "<")
+    .replaceAll(">", ">")
+    .replaceAll('"', """)
+    .replaceAll("'", "&#039;");
 }
-
-function openNewEvent(dateISO) {
-  const start = new Date(dateISO);
-  start.setHours(9, 0);
-
-  const end = new Date(dateISO);
-  end.setHours(10, 0);
-
-  els.eventId.value = "";
-  els.titleInput.value = "";
-  els.descriptionInput.value = "";
-  els.startInput.value = start.toISOString().slice(0, 16);
-  els.endInput.value = end.toISOString().slice(0, 16);
-
-  els.deleteBtn.classList.add("hidden");
-  openModal();
-}
-
-function openEditEvent(event) {
-  els.eventId.value = event.id;
-  els.titleInput.value = event.title;
-  els.descriptionInput.value = event.description || "";
-  els.startInput.value = event.start_at.slice(0, 16);
-  els.endInput.value = event.end_at.slice(0, 16);
-
-  els.deleteBtn.classList.remove("hidden");
-  openModal();
-}
-
-/* ---------- CRUD ---------- */
-
-async function saveEvent(e) {
-  e.preventDefault();
-
-  const payload = {
-    calendar_id: CALENDAR_ID,
-    title: els.titleInput.value.trim(),
-    description: els.descriptionInput.value.trim(),
-    start_at: new Date(els.startInput.value).toISOString(),
-    end_at: new Date(els.endInput.value).toISOString()
-  };
-
-  let res;
-
-  if (els.eventId.value) {
-    res = await supabase
-      .from("events")
-      .update(payload)
-      .eq("id", els.eventId.value);
-  } else {
-    res = await supabase.from("events").insert(payload);
-  }
-
-  if (res.error) return alert(res.error.message);
-
-  closeModal();
-  await loadEvents();
-  renderCalendar();
-}
-
-async function deleteEvent() {
-  const id = els.eventId.value;
-  if (!id) return;
-
-  await supabase.from("events").delete().eq("id", id);
-
-  closeModal();
-  await loadEvents();
-  renderCalendar();
-}
-
-/* ---------- UI EVENTS ---------- */
-
-function attachEvents() {
-  els.newEventBtn.addEventListener("click", () => {
-    const now = new Date();
-    openNewEvent(now.toISOString());
-  });
-
-  els.prevBtn.addEventListener("click", async () => {
-    state.currentDate.setMonth(state.currentDate.getMonth() - 1);
-    await loadEvents();
-    renderCalendar();
-  });
-
-  els.nextBtn.addEventListener("click", async () => {
-    state.currentDate.setMonth(state.currentDate.getMonth() + 1);
-    await loadEvents();
-    renderCalendar();
-  });
-
-  els.todayBtn.addEventListener("click", async () => {
-    state.currentDate = new Date();
-    await loadEvents();
-    renderCalendar();
-  });
-
-  els.closeModalBtn.addEventListener("click", closeModal);
-  els.cancelBtn.addEventListener("click", closeModal);
-  els.deleteBtn.addEventListener("click", deleteEvent);
-  els.eventForm.addEventListener("submit", saveEvent);
-}
-
-/* ---------- INIT ---------- */
-
-async function init() {
-  renderHeader();
-  attachEvents();
-  await loadEvents();
-  renderCalendar();
-}
-
-init();
