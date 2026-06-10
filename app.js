@@ -191,37 +191,39 @@ function closeModal() {
 
 // ===== CRUD =====
 
-const { error } = await supabaseClient
-  .from(TABLE_NAME)
-  .insert([event]);
-
-if (error) {
-  console.error("Insert error:", error);
-  alert(error.message);
-}
+async function handleSaveEvent(e) {
+  e.preventDefault();
 
   const event = {
     title: els.titleInput.value,
     details: els.detailsInput.value,
-    start_at: els.startInput.value,
-    end_at: els.endInput.value,
+    start_at: new Date(els.startInput.value).toISOString(),
+    end_at: new Date(els.endInput.value).toISOString(),
     color: els.colorInput.value
   };
 
   try {
+    let error;
+
     if (els.eventId.value) {
-      await supabaseClient
+      ({ error } = await supabaseClient
         .from(TABLE_NAME)
         .update(event)
-        .eq("id", els.eventId.value);
+        .eq("id", els.eventId.value));
     } else {
-      await supabaseClient
+      ({ error } = await supabaseClient
         .from(TABLE_NAME)
-        .insert([event]);
+        .insert([event]));
+    }
+
+    if (error) {
+      console.error("Save error:", error);
+      alert(error.message);
+      return;
     }
 
     closeModal();
-    fetchEventsForVisibleWeek();
+    await fetchEventsForVisibleWeek();
   } catch (err) {
     console.error(err);
   }
