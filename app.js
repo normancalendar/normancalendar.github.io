@@ -118,8 +118,26 @@ function renderWeek() {
   for (let i = 0; i < 7; i++) {
     const day = addDays(state.currentWeekStart, i);
 
-    const col = document.createElement("div");
-    col.className = "day-column";
+    col.addEventListener("click", (e) => {
+  // prevent clicking an existing event
+  if (e.target.closest(".event")) return;
+
+  openCreateModal();
+
+  const clickedDate = new Date(day);
+
+  // default time = 09:00
+  clickedDate.setHours(9, 0);
+
+  els.startInput.value = clickedDate.toISOString().slice(0, 16);
+
+  clickedDate.setHours(10, 0);
+  els.endInput.value = clickedDate.toISOString().slice(0, 16);
+});
+
+if (sameDay(day, new Date())) {
+  col.classList.add("today");
+}
 
     const header = document.createElement("div");
     header.className = "day-header";
@@ -133,10 +151,16 @@ function renderWeek() {
         item.className = "event";
         item.style.background = e.color || "#3b82f6";
 
+        const start = new Date(e.start_at).toLocaleTimeString([], {
+  hour: '2-digit',
+  minute: '2-digit'
+});
+
         item.innerHTML = `
-          <div class="event-title">${e.title}</div>
-          ${e.details ? `<div class="event-details">${e.details}</div>` : ""}
-      `;
+        <div class="event-time">${start}</div>
+        <div class="event-title">${e.title}</div>
+        ${e.details ? `<div class="event-details">${e.details}</div>` : ""}
+`;
 
 
         item.addEventListener("click", () => openEditModal(e));
