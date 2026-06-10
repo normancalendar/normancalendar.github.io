@@ -51,7 +51,7 @@
   --shadow-lg: 0 22px 60px rgba(22, 22, 18, 0.12);
 
   --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
-  --day-column-width: minmax(220px, 1fr);
+  --day-column-width: 1fr;
   --hour-row-height: 4rem;
 }
 
@@ -298,9 +298,8 @@ p {
 
 .week-grid {
   display: grid;
-  grid-template-columns: 72px repeat(7, var(--day-column-width));
-  min-width: 1200px;
-  overflow: auto;
+  grid-template-columns: 72px repeat(7, 1fr);
+  width: 100%;
 }
 
 .time-corner,
