@@ -7,13 +7,42 @@ const supabaseClient = window.supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsbGRqbWZ6Y3Vhd3JwcnNxdm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDk5MDUsImV4cCI6MjA5NjU4NTkwNX0.QhUkbTA3q33QiCfywvZ6xbS4ru_InCdYfwZ_be6DSdM"
 );
 
+function startOfWeek(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function addDays(date, days) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+function formatDate(date) {
+  return date.toISOString().split("T")[0];
+}
+
+function sameDay(a, b) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+// ===== STATE =====
+
 const state = {
   currentWeekStart: startOfWeek(new Date()),
   events: [],
-  activeEventId: null,
-  realtimeChannel: null,
-  theme: window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+  realtimeChannel: null
 };
+
+// ===== ELEMENTS =====
 
 const els = {
   weekLabel: document.getElementById("weekLabel"),
@@ -23,7 +52,6 @@ const els = {
   nextWeekBtn: document.getElementById("nextWeekBtn"),
   todayBtn: document.getElementById("todayBtn"),
   newEventBtn: document.getElementById("newEventBtn"),
-  themeToggle: document.getElementById("themeToggle"),
   modal: document.getElementById("eventModal"),
   form: document.getElementById("eventForm"),
   modalTitle: document.getElementById("modalTitle"),
@@ -33,13 +61,12 @@ const els = {
   startInput: document.getElementById("startInput"),
   endInput: document.getElementById("endInput"),
   colorInput: document.getElementById("colorInput"),
-  formError: document.getElementById("formError"),
   deleteBtn: document.getElementById("deleteBtn"),
   cancelBtn: document.getElementById("cancelBtn"),
   closeModalBtn: document.getElementById("closeModalBtn")
 };
 
-document.documentElement.setAttribute("data-theme", state.theme);
+// ===== INIT =====
 
 init();
 
@@ -49,6 +76,8 @@ async function init() {
   await fetchEventsForVisibleWeek();
   setupRealtime();
 }
+
+// ===== EVENTS =====
 
 function bindEvents() {
   els.prevWeekBtn.addEventListener("click", async () => {
@@ -69,12 +98,7 @@ function bindEvents() {
     await fetchEventsForVisibleWeek();
   });
 
-  els.newEventBtn.addEventListener("click", () => openCreateModal());
-
-  els.themeToggle.addEventListener("click", () => {
-    state.theme = state.theme === "dark" ? "light" : "dark";
-    document.documentElement.setAttribute("data-theme", state.theme);
-  });
+  els.newEventBtn.addEventListener("click", openCreateModal);
 
   els.form.addEventListener("submit", handleSaveEvent);
   els.deleteBtn.addEventListener("click", handleDeleteEvent);
@@ -82,9 +106,47 @@ function bindEvents() {
   els.closeModalBtn.addEventListener("click", closeModal);
 }
 
+// ===== RENDER =====
+
+function renderWeek() {
+  els.weekGrid.innerHTML = "";
+
+  for (let i = 0; i < 7; i++) {
+    const day = addDays(state.currentWeekStart, i);
+
+    const col = document.createElement("div");
+    col.className = "day-column";
+
+    const header = document.createElement("h3");
+    header.textContent = day.toDateString();
+
+    col.appendChild(header);
+
+    state.events
+      .filter(e => sameDay(new Date(e.start_at), day))
+      .forEach(e => {
+        const item = document.createElement("div");
+        item.textContent = e.title;
+        item.style.background = e.color || "#3b82f6";
+        item.className = "event";
+
+        item.addEventListener("click", () => openEditModal(e));
+
+        col.appendChild(item);
+      });
+
+    els.weekGrid.appendChild(col);
+  }
+
+  els.weekLabel.textContent = "Week of " + state.currentWeekStart.toDateString();
+}
+
+// ===== DATA =====
+
 async function fetchEventsForVisibleWeek() {
   try {
     setStatus("Syncing…");
+
     const start = new Date(state.currentWeekStart);
     const end = addDays(start, 7);
 
@@ -92,8 +154,7 @@ async function fetchEventsForVisibleWeek() {
       .from(TABLE_NAME)
       .select("*")
       .lt("start_at", end.toISOString())
-      .gt("end_at", start.toISOString())
-      .order("start_at", { ascending: true });
+      .gt("end_at", start.toISOString());
 
     if (error) throw error;
 
@@ -103,4 +164,92 @@ async function fetchEventsForVisibleWeek() {
   } catch (error) {
     console.error(error);
   }
-}  
+}
+
+// ===== MODAL =====
+
+function openCreateModal() {
+  els.modalTitle.textContent = "New Event";
+  els.form.reset();
+  els.eventId.value = "";
+  els.modal.style.display = "block";
+}
+
+function openEditModal(event) {
+  els.eventId.value = event.id;
+  els.titleInput.value = event.title;
+  els.detailsInput.value = event.details || "";
+  els.startInput.value = event.start_at.slice(0, 16);
+  els.endInput.value = event.end_at.slice(0, 16);
+  els.colorInput.value = event.color || "#3b82f6";
+  els.modal.style.display = "block";
+}
+
+function closeModal() {
+  els.modal.style.display = "none";
+}
+
+// ===== CRUD =====
+
+async function handleSaveEvent(e) {
+  e.preventDefault();
+
+  const event = {
+    title: els.titleInput.value,
+    details: els.detailsInput.value,
+    start_at: els.startInput.value,
+    end_at: els.endInput.value,
+    color: els.colorInput.value
+  };
+
+  try {
+    if (els.eventId.value) {
+      await supabaseClient
+        .from(TABLE_NAME)
+        .update(event)
+        .eq("id", els.eventId.value);
+    } else {
+      await supabaseClient
+        .from(TABLE_NAME)
+        .insert([event]);
+    }
+
+    closeModal();
+    fetchEventsForVisibleWeek();
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function handleDeleteEvent() {
+  if (!els.eventId.value) return;
+
+  await supabaseClient
+    .from(TABLE_NAME)
+    .delete()
+    .eq("id", els.eventId.value);
+
+  closeModal();
+  fetchEventsForVisibleWeek();
+}
+
+// ===== REALTIME =====
+
+function setupRealtime() {
+  state.realtimeChannel = supabaseClient
+    .channel("events")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: TABLE_NAME },
+      () => fetchEventsForVisibleWeek()
+    )
+    .subscribe();
+}
+
+// ===== STATUS =====
+
+function setStatus(text) {
+  if (els.syncStatus) {
+    els.syncStatus.textContent = text;
+  }
+} 
