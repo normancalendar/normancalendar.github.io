@@ -227,9 +227,7 @@ async function fetchEventsForVisibleWeek() {
 
     const { data, error } = await supabaseClient
       .from(TABLE_NAME)
-      .select("*")
-      .lt("start_at", end.toISOString())
-      .gt("end_at", start.toISOString());
+      .select("*");
 
     if (error) throw error;
 
