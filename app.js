@@ -147,11 +147,6 @@ function renderWeek() {
     els.endInput.value = clickedDate.toISOString().slice(0, 16);
   });
 
-    const header = document.createElement("div");
-    header.className = "day-header";
-    header.textContent = day.toDateString();
-    col.appendChild(header);
-
     state.events
       .filter(e => sameDay(new Date(e.start_at), day))
       .forEach(e => {
