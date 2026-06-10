@@ -43,13 +43,20 @@
     <main id="main" class="main">
       <section class="hero-card">
         <div class="week-controls">
-          <button class="nav-btn" id="prevWeekBtn" type="button" aria-label="Previous week">←</button>
-          <div>
-            <p class="eyebrow">Current view</p>
-            <h2 id="weekLabel">Week</h2>
-          </div>
-          <button class="nav-btn" id="nextWeekBtn" type="button" aria-label="Next week">→</button>
-        </div>
+          <div class="nav-wrapper">
+  <button class="nav-btn" id="prevWeekBtn" type="button">←</button>
+  <span class="nav-badge" id="prevBadge"></span>
+</div>
+
+<div>
+  <p class="eyebrow">Current view</p>
+  <h2 id="weekLabel">Week</h2>
+</div>
+
+<div class="nav-wrapper">
+  <button class="nav-btn" id="nextWeekBtn" type="button">→</button>
+  <span class="nav-badge" id="nextBadge"></span>
+</div>
 
         <div class="hero-actions">
           <button class="primary-btn" id="newEventBtn" type="button">+ New event</button>
