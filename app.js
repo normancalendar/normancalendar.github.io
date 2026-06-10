@@ -2,23 +2,10 @@ const SUPABASE_URL = "https://zlldjmfzcuawrprsqvmn.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsbGRqbWZ6Y3Vhd3JwcnNxdm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDk5MDUsImV4cCI6MjA5NjU4NTkwNX0.QhUkbTA3q33QiCfywvZ6xbS4ru_InCdYfwZ_be6DSdM";
 const TABLE_NAME = "events";
 
-const { createClient } = supabase;
-
-const supabaseClient = createClient(
+const supabaseClient = window.supabase.createClient(
   "https://zlldjmfzcuawrprsqvmn.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsbGRqbWZ6Y3Vhd3JwcnNxdm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDk5MDUsImV4cCI6MjA5NjU4NTkwNX0.QhUkbTA3q33QiCfywvZ6xbS4ru_InCdYfwZ_be6DSdM",  
-{
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false
-    },
-    realtime: {
-      enabled: false   
-    }
-  }
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsbGRqbWZ6Y3Vhd3JwcnNxdm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDk5MDUsImV4cCI6MjA5NjU4NTkwNX0.QhUkbTA3q33QiCfywvZ6xbS4ru_InCdYfwZ_be6DSdM"
 );
-
 
 function startOfWeek(date) {
   const d = new Date(date);
@@ -33,30 +20,6 @@ function addDays(date, days) {
   const d = new Date(date);
   d.setDate(d.getDate() + days);
   return d;
-}
-
-function countEventsInWeek(startDate) {
-  const start = new Date(startDate);
-  const end = addDays(start, 7);
-
-  return state.events.filter(e => {
-    const eventDate = new Date(e.start_at);
-    return eventDate >= start && eventDate < end;
-  }).length;
-}
-
-function updateWeekBadges() {
-  const prevWeek = addDays(state.currentWeekStart, -7);
-  const nextWeek = addDays(state.currentWeekStart, 7);
-
-  const prevCount = countEventsInWeek(prevWeek);
-  const nextCount = countEventsInWeek(nextWeek);
-
-  const prevBadge = document.getElementById("prevBadge");
-  const nextBadge = document.getElementById("nextBadge");
-
-  prevBadge.textContent = prevCount > 0 ? prevCount : "";
-  nextBadge.textContent = nextCount > 0 ? nextCount : "";
 }
 
 function formatDate(date) {
@@ -111,7 +74,7 @@ async function init() {
   bindEvents();
   renderWeek();
   await fetchEventsForVisibleWeek();
-  // setupRealtime();
+  setupRealtime();
 }
 
 // ===== EVENTS =====
@@ -128,8 +91,6 @@ function bindEvents() {
     renderWeek();
     await fetchEventsForVisibleWeek();
   });
-
-  
 
   els.todayBtn.addEventListener("click", async () => {
     state.currentWeekStart = startOfWeek(new Date());
@@ -214,8 +175,6 @@ function renderWeek() {
   }
 
   els.weekLabel.textContent = "Week of " + state.currentWeekStart.toDateString();
-
-  updateWeekBadges();
 }
 
 // ===== DATA =====
@@ -228,11 +187,10 @@ async function fetchEventsForVisibleWeek() {
     const end = addDays(start, 7);
 
     const { data, error } = await supabaseClient
-    .from(TABLE_NAME)
-    .select("*")
-    .lt("start_at", end.toISOString())
-    .gt("end_at", start.toISOString());
-
+      .from(TABLE_NAME)
+      .select("*")
+      .lt("start_at", end.toISOString())
+      .gt("end_at", start.toISOString());
 
     if (error) throw error;
 
