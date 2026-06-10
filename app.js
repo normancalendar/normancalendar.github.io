@@ -111,7 +111,7 @@ async function init() {
   bindEvents();
   renderWeek();
   await fetchEventsForVisibleWeek();
-  setupRealtime();
+  // setupRealtime();
 }
 
 // ===== EVENTS =====
