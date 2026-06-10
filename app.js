@@ -172,7 +172,7 @@ function openCreateModal() {
   els.modalTitle.textContent = "New Event";
   els.form.reset();
   els.eventId.value = "";
-  els.modal.style.display = "block";
+  els.modal.showModal(); 
 }
 
 function openEditModal(event) {
@@ -182,11 +182,11 @@ function openEditModal(event) {
   els.startInput.value = event.start_at.slice(0, 16);
   els.endInput.value = event.end_at.slice(0, 16);
   els.colorInput.value = event.color || "#3b82f6";
-  els.modal.style.display = "block";
+  els.modal.showModal(); 
 }
 
 function closeModal() {
-  els.modal.style.display = "none";
+  els.modal.close(); 
 }
 
 // ===== CRUD =====
