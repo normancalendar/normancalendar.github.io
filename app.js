@@ -191,8 +191,14 @@ function closeModal() {
 
 // ===== CRUD =====
 
-async function handleSaveEvent(e) {
-  e.preventDefault();
+const { error } = await supabaseClient
+  .from(TABLE_NAME)
+  .insert([event]);
+
+if (error) {
+  console.error("Insert error:", error);
+  alert(error.message);
+}
 
   const event = {
     title: els.titleInput.value,
