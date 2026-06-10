@@ -121,9 +121,9 @@ function renderWeek() {
     const col = document.createElement("div");
     col.className = "day-column";
 
-    const header = document.createElement("h3");
+    const header = document.createElement("div");
+    header.className = "day-header";
     header.textContent = day.toDateString();
-
     col.appendChild(header);
 
     state.events
@@ -182,6 +182,8 @@ function openCreateModal() {
   els.form.reset();
   els.eventId.value = "";
   els.modal.showModal(); 
+  els.deleteBtn.classList.add("hidden");
+
 }
 
 function openEditModal(event) {
@@ -192,10 +194,12 @@ function openEditModal(event) {
   els.endInput.value = event.end_at.slice(0, 16);
   els.colorInput.value = event.color || "#3b82f6";
   els.modal.showModal(); 
+  els.deleteBtn.classList.remove("hidden");
 }
 
 function closeModal() {
   els.modal.close(); 
+  els.deleteBtn.classList.add("hidden");
 }
 
 // ===== CRUD =====
