@@ -205,6 +205,27 @@ async function fetchEventsForVisibleWeek() {
     console.error(error);
   }
 }
+async function updateNavigationIndicators() {
+  const start = new Date(state.currentWeekStart);
+  const end = addDays(start, 7);
+
+  // past events
+  const { data: past } = await supabaseClient
+    .from(TABLE_NAME)
+    .select("id")
+    .lt("end_at", start.toISOString())
+    .limit(1);
+
+  // future events
+  const { data: future } = await supabaseClient
+    .from(TABLE_NAME)
+    .select("id")
+    .gt("start_at", end.toISOString())
+    .limit(1);
+
+  els.prevWeekBtn.classList.toggle("has-events", past.length > 0);
+  els.nextWeekBtn.classList.toggle("has-events", future.length > 0);
+}
 
 // ===== MODAL =====
 
