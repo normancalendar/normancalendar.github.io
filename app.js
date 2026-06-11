@@ -75,7 +75,8 @@ async function init() {
   bindEvents();
   renderWeek();
   await fetchEventsForVisibleWeek();
-  // setupRealtime();
+  await updateNavigationIndicators();
+  setupRealtime();
 }
 
 // ===== EVENTS =====
@@ -85,18 +86,21 @@ function bindEvents() {
     state.currentWeekStart = addDays(state.currentWeekStart, -7);
     renderWeek();
     await fetchEventsForVisibleWeek();
+    await updateNavigationIndicators();
   });
 
   els.nextWeekBtn.addEventListener("click", async () => {
     state.currentWeekStart = addDays(state.currentWeekStart, 7);
     renderWeek();
     await fetchEventsForVisibleWeek();
+    await updateNavigationIndicators();
   });
 
   els.todayBtn.addEventListener("click", async () => {
     state.currentWeekStart = startOfWeek(new Date());
     renderWeek();
     await fetchEventsForVisibleWeek();
+    await updateNavigationIndicators();
   });
 
   els.newEventBtn.addEventListener("click", openCreateModal);
