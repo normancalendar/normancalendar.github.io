@@ -1,117 +1,303 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="light">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shared Week Calendar</title>
+const SUPABASE_URL = "https://jrzqppjsubpzoynyqsjy.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyenFwcGpzdWJwem95bnlxc2p5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjA3ODksImV4cCI6MjA5NjczNjc4OX0.gXhE8iqIG5ZsagBSXouBTVqU-a_3mnsuL1Byb_ZqiFs";
+const TABLE_NAME = "events";
 
-  <link rel="preconnect" href="https://api.fontshare.com" />
-  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+const supabaseClient = window.supabase.createClient(
+  "jrzqppjsubpzoynyqsjy.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyenFwcGpzdWJwem95bnlxc2p5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjA3ODksImV4cCI6MjA5NjczNjc4OX0.gXhE8iqIG5ZsagBSXouBTVqU-a_3mnsuL1Byb_ZqiFs"
+);
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script defer src="app.js"></script>
-</head>
-<body>
-  <a class="skip-link" href="#main">Skip to content</a>
+function startOfWeek(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
 
-  <div class="app-shell">
-    <header class="topbar">
-      <div class="brand-wrap">
-        <div class="logo" aria-label="Calendar logo">
-          <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-            <rect x="10" y="14" width="44" height="40" rx="12" stroke="currentColor" stroke-width="4"/>
-            <path d="M20 10V22" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-            <path d="M44 10V22" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-            <path d="M10 26H54" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div>
-          <p class="eyebrow">Shared schedule</p>
-          <h1>Week calendar</h1>
-        </div>
-      </div>
+function addDays(date, days) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
 
-      <div class="topbar-actions">
-        <button class="icon-btn" id="todayBtn" type="button">Today</button>
-        <button class="icon-btn" id="themeToggle" type="button" aria-label="Switch theme">
-          <span class="theme-icon">◐</span>
-        </button>
-      </div>
-    </header>
+function formatDate(date) {
+  return date.toISOString().split("T")[0];
+}
 
-    <main id="main" class="main">
-      <section class="hero-card">
-        <div class="week-controls">
-          <button class="nav-btn" id="prevWeekBtn" type="button" aria-label="Previous week">←</button>
-          <div>
-            <p class="eyebrow">Current view</p>
-            <h2 id="weekLabel">Week</h2>
-          </div>
-          <button class="nav-btn" id="nextWeekBtn" type="button" aria-label="Next week">→</button>
-        </div>
+function sameDay(a, b) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
 
-        <div class="hero-actions">
-          <button class="primary-btn" id="newEventBtn" type="button">+ New event</button>
-          <p class="sync-status" id="syncStatus">Connecting…</p>
-        </div>
-      </section>
+// ===== STATE =====
 
-      <section class="calendar-panel" aria-label="Weekly calendar">
-        <div class="week-grid" id="weekGrid"></div>
-      </section>
-    </main>
-  </div>
+const state = {
+  currentWeekStart: startOfWeek(new Date()),
+  events: [],
+  realtimeChannel: null
+};
 
-  <dialog class="event-modal" id="eventModal">
-    <form class="event-form" id="eventForm" method="dialog">
-      <div class="modal-head">
-        <div>
-          <p class="eyebrow">Schedule item</p>
-          <h3 id="modalTitle">New event</h3>
-        </div>
-        <button class="close-btn" id="closeModalBtn" type="button" aria-label="Close">✕</button>
-      </div>
+// ===== ELEMENTS =====
 
-      <input type="hidden" id="eventId" />
+const els = {
+  weekLabel: document.getElementById("weekLabel"),
+  weekGrid: document.getElementById("weekGrid"),
+  syncStatus: document.getElementById("syncStatus"),
+  prevWeekBtn: document.getElementById("prevWeekBtn"),
+  nextWeekBtn: document.getElementById("nextWeekBtn"),
+  todayBtn: document.getElementById("todayBtn"),
+  newEventBtn: document.getElementById("newEventBtn"),
+  modal: document.getElementById("eventModal"),
+  form: document.getElementById("eventForm"),
+  modalTitle: document.getElementById("modalTitle"),
+  eventId: document.getElementById("eventId"),
+  titleInput: document.getElementById("titleInput"),
+  detailsInput: document.getElementById("detailsInput"),
+  startInput: document.getElementById("startInput"),
+  endInput: document.getElementById("endInput"),
+  colorInput: document.getElementById("colorInput"),
+  deleteBtn: document.getElementById("deleteBtn"),
+  cancelBtn: document.getElementById("cancelBtn"),
+  closeModalBtn: document.getElementById("closeModalBtn")
+};
 
-      <label>
-        <span>Title</span>
-        <input id="titleInput" name="title" type="text" maxlength="120" required placeholder="Team check-in" />
-      </label>
+// ===== INIT =====
 
-      <label>
-        <span>Details</span>
-        <textarea id="detailsInput" name="details" rows="3" placeholder="Optional notes"></textarea>
-      </label>
+init();
 
-      <div class="form-row">
-        <label>
-          <span>Start</span>
-          <input id="startInput" name="start" type="datetime-local" required />
-        </label>
+async function init() {
+  bindEvents();
+  renderWeek();
+  await fetchEventsForVisibleWeek();
+  setupRealtime();
+}
 
-        <label>
-          <span>End</span>
-          <input id="endInput" name="end" type="datetime-local" required />
-        </label>
-      </div>
+// ===== EVENTS =====
 
-      <label>
-        <span>Colour</span>
-        <input id="colorInput" name="color" type="color" value="#01696f" />
-      </label>
+function bindEvents() {
+  els.prevWeekBtn.addEventListener("click", async () => {
+    state.currentWeekStart = addDays(state.currentWeekStart, -7);
+    renderWeek();
+    await fetchEventsForVisibleWeek();
+  });
 
-      <p class="form-error" id="formError" role="alert"></p>
+  els.nextWeekBtn.addEventListener("click", async () => {
+    state.currentWeekStart = addDays(state.currentWeekStart, 7);
+    renderWeek();
+    await fetchEventsForVisibleWeek();
+  });
 
-      <div class="modal-actions">
-        <button class="danger-btn hidden" id="deleteBtn" type="button">Delete</button>
-        <div class="action-group">
-          <button class="ghost-btn" id="cancelBtn" type="button">Cancel</button>
-          <button class="primary-btn" id="saveBtn" type="submit">Save event</button>
-        </div>
-      </div>
-    </form>
-  </dialog>
-</body>
-</html>
+  els.todayBtn.addEventListener("click", async () => {
+    state.currentWeekStart = startOfWeek(new Date());
+    renderWeek();
+    await fetchEventsForVisibleWeek();
+  });
+
+  els.newEventBtn.addEventListener("click", openCreateModal);
+
+  els.form.addEventListener("submit", handleSaveEvent);
+  els.deleteBtn.addEventListener("click", handleDeleteEvent);
+  els.cancelBtn.addEventListener("click", closeModal);
+  els.closeModalBtn.addEventListener("click", closeModal);
+}
+
+// ===== RENDER =====
+
+function renderWeek() {
+  els.weekGrid.innerHTML = "";
+
+  const spacer = document.createElement("div");
+  spacer.className = "time-column";
+  els.weekGrid.appendChild(spacer);
+
+  for (let i = 0; i < 7; i++) {
+  const day = addDays(state.currentWeekStart, i);
+
+  // ✅ CREATE COLUMN FIRST (this was missing)
+  const col = document.createElement("div");
+  col.className = "day-column";
+
+  // ✅ highlight today
+  if (sameDay(day, new Date())) {
+    col.classList.add("today");
+  }
+
+  const header = document.createElement("div");
+  header.className = "day-header";
+  header.textContent = day.toDateString();
+  col.appendChild(header);
+
+  // ✅ NOW attach click handler (correct placement)
+  col.addEventListener("click", (e) => {
+    if (e.target.closest(".event")) return;
+
+    openCreateModal();
+
+    const clickedDate = new Date(day);
+
+    clickedDate.setHours(9, 0);
+    els.startInput.value = clickedDate.toISOString().slice(0, 16);
+
+    clickedDate.setHours(10, 0);
+    els.endInput.value = clickedDate.toISOString().slice(0, 16);
+  });
+
+    state.events
+      .filter(e => sameDay(new Date(e.start_at), day))
+      .forEach(e => {
+        const item = document.createElement("div");
+        item.className = "event";
+        item.style.background = e.color || "#3b82f6";
+
+        const start = new Date(e.start_at).toLocaleTimeString([], {
+  hour: '2-digit',
+  minute: '2-digit'
+});
+
+        item.innerHTML = `
+        <div class="event-time">${start}</div>
+        <div class="event-title">${e.title}</div>
+        ${e.details ? `<div class="event-details">${e.details}</div>` : ""}
+`;
+
+
+        item.addEventListener("click", () => openEditModal(e));
+
+        col.appendChild(item);
+      });
+
+    els.weekGrid.appendChild(col);
+  }
+
+  els.weekLabel.textContent = "Week of " + state.currentWeekStart.toDateString();
+}
+
+// ===== DATA =====
+
+async function fetchEventsForVisibleWeek() {
+  try {
+    setStatus("Syncing…");
+
+    const start = new Date(state.currentWeekStart);
+    const end = addDays(start, 7);
+
+    const { data, error } = await supabaseClient
+      .from(TABLE_NAME)
+      .select("*")
+      .lt("start_at", end.toISOString())
+      .gt("end_at", start.toISOString());
+
+    if (error) throw error;
+
+    state.events = data || [];
+    renderWeek();
+    setStatus("Live");
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// ===== MODAL =====
+
+function openCreateModal() {
+  els.modalTitle.textContent = "New Event";
+  els.form.reset();
+  els.eventId.value = "";
+  els.modal.showModal(); 
+  els.deleteBtn.classList.add("hidden");
+
+}
+
+function openEditModal(event) {
+  els.eventId.value = event.id;
+  els.titleInput.value = event.title;
+  els.detailsInput.value = event.details || "";
+  els.startInput.value = event.start_at.slice(0, 16);
+  els.endInput.value = event.end_at.slice(0, 16);
+  els.colorInput.value = event.color || "#3b82f6";
+  els.modal.showModal(); 
+  els.deleteBtn.classList.remove("hidden");
+}
+
+function closeModal() {
+  els.modal.close(); 
+  els.deleteBtn.classList.add("hidden");
+}
+
+// ===== CRUD =====
+
+async function handleSaveEvent(e) {
+  e.preventDefault();
+
+  const event = {
+    title: els.titleInput.value,
+    details: els.detailsInput.value,
+    start_at: new Date(els.startInput.value).toISOString(),
+    end_at: new Date(els.endInput.value).toISOString(),
+    color: els.colorInput.value
+  };
+
+  try {
+    let error;
+
+    if (els.eventId.value) {
+      ({ error } = await supabaseClient
+        .from(TABLE_NAME)
+        .update(event)
+        .eq("id", els.eventId.value));
+    } else {
+      ({ error } = await supabaseClient
+        .from(TABLE_NAME)
+        .insert([event]));
+    }
+
+    if (error) {
+      console.error("Save error:", error);
+      alert(error.message);
+      return;
+    }
+
+    closeModal();
+    await fetchEventsForVisibleWeek();
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function handleDeleteEvent() {
+  if (!els.eventId.value) return;
+
+  await supabaseClient
+    .from(TABLE_NAME)
+    .delete()
+    .eq("id", els.eventId.value);
+
+  closeModal();
+  fetchEventsForVisibleWeek();
+}
+
+// ===== REALTIME =====
+
+function setupRealtime() {
+  state.realtimeChannel = supabaseClient
+    .channel("events")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: TABLE_NAME },
+      () => fetchEventsForVisibleWeek()
+    )
+    .subscribe();
+}
+
+// ===== STATUS =====
+
+function setStatus(text) {
+  if (els.syncStatus) {
+    els.syncStatus.textContent = text;
+  }
+} 
