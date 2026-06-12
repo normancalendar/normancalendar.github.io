@@ -130,6 +130,15 @@ function openCreateModal() {
   els.modal.showModal();
 }
 
+function toLocalInputValue(utcString) {
+  const date = new Date(utcString);
+
+  const offset = date.getTimezoneOffset();
+  const local = new Date(date.getTime() - offset * 60000);
+
+  return local.toISOString().slice(0, 16);
+}
+
 function openEditModal(e) {
   els.eventId.value = e.id;
   els.title.value = e.title;
@@ -137,8 +146,8 @@ function openEditModal(e) {
   els.contact.value = e.contact || ""; 
   els.note.value = e.note || "";
   els.details.value = e.details || "";
-  els.start.value = e.start_at.slice(0, 16);
-  els.end.value = e.end_at.slice(0, 16);
+  els.start.value = toLocalInputValue(e.start_at); 
+  els.end.value = toLocalInputValue(e.end_at);      
   els.modal.showModal();
 }
 
