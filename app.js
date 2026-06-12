@@ -15,6 +15,8 @@ const els = {
   eventId: document.getElementById("eventId"),
   title: document.getElementById("titleInput"),
   details: document.getElementById("detailsInput"),
+  lead: document.getElementById("leadInput"),       
+  contact: document.getElementById("contactInput"), 
   start: document.getElementById("startInput"),
   end: document.getElementById("endInput"),
   color: document.getElementById("colorInput"),
@@ -72,7 +74,9 @@ function render() {
 
       row.innerHTML = `
         <div>${ev.title}</div>
-        <div>${ev.details || ""}</div>
+        <div>${ev.details || ""}</div>     
+        <div>${ev.lead || ""}</div>       
+        <div>${ev.contact || ""}</div>    
         <div>—</div>
         <div>—</div>
       `;
@@ -98,6 +102,8 @@ function openCreateModal() {
 function openEditModal(e) {
   els.eventId.value = e.id;
   els.title.value = e.title;
+  els.lead.value = e.lead || "";          // NEW
+  els.contact.value = e.contact || "";    // NEW
   els.details.value = e.details || "";
   els.start.value = e.start_at.slice(0, 16);
   els.end.value = e.end_at.slice(0, 16);
@@ -114,6 +120,8 @@ async function saveEvent(e) {
   const event = {
     title: els.title.value,
     details: els.details.value,
+    lead: els.lead.value,          // NEW
+    contact: els.contact.value,    // NEW
     start_at: new Date(els.start.value).toISOString(),
     end_at: new Date(els.end.value).toISOString(),
     color: els.color.value
