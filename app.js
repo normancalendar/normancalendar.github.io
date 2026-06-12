@@ -88,24 +88,29 @@ function render() {
 ` : ""}
 `;
 
-row.addEventListener("click", () => {
-  const note = row.querySelector(".event-note");
-  const toggle = row.querySelector(".event-note-toggle");
+// ✅ ONLY this handles opening modal
+row.onclick = () => {
+  openEditModal(ev);
+};
 
-  if (toggle) {
-    toggle.addEventListener("click", (e) => {
-      e.stopPropagation();  // ✅ THIS FIXES YOUR ISSUE
+// ✅ separate handler for note toggle
+const toggle = row.querySelector(".event-note-toggle");
 
-      const note = row.querySelector(".event-note");
+if (toggle) {
+  toggle.addEventListener("click", (e) => {
+    e.stopPropagation();  // ✅ stops modal opening
 
-      const isExpanded = note.classList.contains("expanded");
+    const note = row.querySelector(".event-note");
+    const isExpanded = note.classList.contains("expanded");
 
-      note.classList.toggle("expanded");
-      note.classList.toggle("collapsed");
+    note.classList.toggle("expanded");
+    note.classList.toggle("collapsed");
 
-      toggle.textContent = isExpanded ? "Show note ▼" : "Hide note ▲";
-    });
-  }
+    toggle.textContent = isExpanded
+      ? "Show note ▼"
+      : "Hide note ▲";
+  });
+}
 });  
 
       row.onclick = (e) => {
