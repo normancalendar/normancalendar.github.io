@@ -123,6 +123,44 @@ button:hover {
   transition: var(--transition);
 }
 
+/* NOTE ROW */
+.event-note {
+  grid-column: 1 / -1;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border);
+
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease;
+}
+
+/* collapsed (default) */
+.event-note.collapsed {
+  max-height: 0;
+}
+
+/* expanded */
+.event-note.expanded {
+  max-height: 200px; /* adjust as needed */
+}
+
+.event-note-toggle {
+  grid-column: 1 / -1;
+  font-size: 0.8rem;
+  color: var(--secondary);
+  margin-top: 4px;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+}
+
+.event-note-toggle:hover {
+  text-decoration: underline;
+}
+
 /* alternate subtle styling */
 .event-row:nth-child(even) {
   border-left-color: var(--secondary);
