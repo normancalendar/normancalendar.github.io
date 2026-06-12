@@ -17,6 +17,7 @@ const els = {
   details: document.getElementById("detailsInput"),
   lead: document.getElementById("leadInput"),       
   contact: document.getElementById("contactInput"), 
+  note: document.getElementById("noteInput"),
   start: document.getElementById("startInput"),
   end: document.getElementById("endInput"),
   color: document.getElementById("colorInput"),
@@ -77,6 +78,23 @@ function render() {
         <div>${ev.details || ""}</div>     
         <div>${ev.lead || ""}</div>       
         <div>${ev.contact || ""}</div>    
+
+        
+        ${ev.note ? `
+          <div class="event-note collapsed">
+            <span class="note-text">${ev.note}</span>
+          </div>
+  ` : ""}
+`;
+
+row.addEventListener("click", () => {
+  const note = row.querySelector(".event-note");
+  if (note) {
+    note.classList.toggle("expanded");
+    note.classList.toggle("collapsed");
+  }
+});
+
         <div>—</div>
         <div>—</div>
       `;
@@ -102,8 +120,9 @@ function openCreateModal() {
 function openEditModal(e) {
   els.eventId.value = e.id;
   els.title.value = e.title;
-  els.lead.value = e.lead || "";          // NEW
-  els.contact.value = e.contact || "";    // NEW
+  els.lead.value = e.lead || "";          
+  els.contact.value = e.contact || ""; 
+  els.note.value = e.note || "";
   els.details.value = e.details || "";
   els.start.value = e.start_at.slice(0, 16);
   els.end.value = e.end_at.slice(0, 16);
@@ -120,8 +139,9 @@ async function saveEvent(e) {
   const event = {
     title: els.title.value,
     details: els.details.value,
-    lead: els.lead.value,          // NEW
-    contact: els.contact.value,    // NEW
+    lead: els.lead.value,          
+    contact: els.contact.value, 
+    note: els.note.value
     start_at: new Date(els.start.value).toISOString(),
     end_at: new Date(els.end.value).toISOString(),
     color: els.color.value
