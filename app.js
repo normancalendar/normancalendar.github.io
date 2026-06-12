@@ -81,17 +81,24 @@ function render() {
 
         
         ${ev.note ? `
+          <div class="event-note-toggle">Show note ▼</div>
           <div class="event-note collapsed">
             <span class="note-text">${ev.note}</span>
-          </div>
-  ` : ""}
+           </div>
+` : ""}
 `;
 
 row.addEventListener("click", () => {
   const note = row.querySelector(".event-note");
-  if (note) {
+  const toggle = row.querySelector(".event-note-toggle");
+
+  if (note && toggle) {
+    const isExpanded = note.classList.contains("expanded");
+
     note.classList.toggle("expanded");
     note.classList.toggle("collapsed");
+
+    toggle.textContent = isExpanded ? "Show note ▼" : "Hide note ▲";
   }
 });
 
