@@ -104,8 +104,9 @@ row.addEventListener("click", () => {
       note.classList.toggle("collapsed");
 
       toggle.textContent = isExpanded ? "Show note ▼" : "Hide note ▲";
-  });
-}
+    });
+  }
+});  
 
       row.onclick = (e) => {
         e.stopPropagation();
