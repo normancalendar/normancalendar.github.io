@@ -32,6 +32,7 @@ function init() {
   els.newEventBtn.onclick = openCreateModal;
   els.form.onsubmit = saveEvent;
   els.deleteBtn.onclick = deleteEvent;
+  document.getElementById("backupBtn").onclick = downloadBackup;
 }
 
 async function fetchEvents() {
@@ -190,4 +191,15 @@ async function deleteEvent() {
 
   closeModal();
   fetchEvents();
+}
+
+function downloadBackup() {
+  const dataStr = JSON.stringify(state.events, null, 2);
+
+  const blob = new Blob([dataStr], { type: "application/json" });
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "events-backup.json";
+  a.click();
 }
