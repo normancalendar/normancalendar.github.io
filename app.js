@@ -164,8 +164,8 @@ async function saveEvent(e) {
     lead: els.lead.value,          
     contact: els.contact.value, 
     note: els.note.value,
-    start_at: els.start.value
-    end_at: els.end.value
+    start_at: els.start.value,
+    end_at: els.end.value,
     color: els.color.value
   };
 
