@@ -92,15 +92,20 @@ row.addEventListener("click", () => {
   const note = row.querySelector(".event-note");
   const toggle = row.querySelector(".event-note-toggle");
 
-  if (note && toggle) {
-    const isExpanded = note.classList.contains("expanded");
+  if (toggle) {
+    toggle.addEventListener("click", (e) => {
+      e.stopPropagation();  // ✅ THIS FIXES YOUR ISSUE
 
-    note.classList.toggle("expanded");
-    note.classList.toggle("collapsed");
+      const note = row.querySelector(".event-note");
 
-    toggle.textContent = isExpanded ? "Show note ▼" : "Hide note ▲";
-  }
-});
+      const isExpanded = note.classList.contains("expanded");
+
+      note.classList.toggle("expanded");
+      note.classList.toggle("collapsed");
+
+      toggle.textContent = isExpanded ? "Show note ▼" : "Hide note ▲";
+  });
+}
 
       row.onclick = (e) => {
         e.stopPropagation();
