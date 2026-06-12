@@ -102,10 +102,6 @@ row.addEventListener("click", () => {
   }
 });
 
-        <div>—</div>
-        <div>—</div>
-      `;
-
       row.onclick = (e) => {
         e.stopPropagation();
         openEditModal(ev);
