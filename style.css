@@ -109,7 +109,7 @@ button:hover {
 .event-row {
   display: grid;
   grid-template-columns: 2fr 2fr 2fr 2fr;
-  gap: 10px;
+  gap: 20px;
 
   padding: 12px;
   margin-bottom: 8px;
