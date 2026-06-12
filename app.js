@@ -110,8 +110,7 @@ if (toggle) {
       ? "Show note ▼"
       : "Hide note ▲";
   });
-}
-});  
+}  
 
       row.onclick = (e) => {
         e.stopPropagation();
