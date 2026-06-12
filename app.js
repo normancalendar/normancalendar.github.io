@@ -144,7 +144,7 @@ async function saveEvent(e) {
     details: els.details.value,
     lead: els.lead.value,          
     contact: els.contact.value, 
-    note: els.note.value
+    note: els.note.value,
     start_at: new Date(els.start.value).toISOString(),
     end_at: new Date(els.end.value).toISOString(),
     color: els.color.value
