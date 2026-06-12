@@ -83,13 +83,11 @@ button:hover {
   display: grid;
   grid-template-columns: 2fr 2fr 2fr 2fr;
   padding: 12px 20px;
-  font-size: 0.9rem;
-  font-weight: 700;
+  font-weight: bold;
   border-bottom: 2px solid var(--secondary);
   background: white;
-  position: sticky;
-  top: 70px;
-  z-index: 5;
+
+  column-gap: 20px;  
 }
 
 /* ===== MONTH SECTION ===== */
