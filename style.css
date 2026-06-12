@@ -77,6 +77,10 @@ button:hover {
   background: var(--secondary);
 }
 
+#backupBtn {
+  margin-left: 10px;
+}
+
 /* ===== COLUMN HEADERS ===== */
 
 .month-header {
