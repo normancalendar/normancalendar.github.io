@@ -354,6 +354,7 @@ function formatDateRange(start, end) {
   const s = new Date(start);
   const e = new Date(end);
 
+  // ✅ All month
   const isAllMonth =
     s.getDate() === 1 &&
     e.getDate() >= 28;
@@ -365,7 +366,12 @@ function formatDateRange(start, end) {
     });
   }
 
+  // ✅ Same day check
+  const sameDay = s.toDateString() === e.toDateString();
+
+  // ✅ All-day (ONLY if same day)
   const isAllDay =
+    sameDay &&
     s.getHours() === 0 &&
     s.getMinutes() === 0 &&
     e.getHours() >= 23;
@@ -376,25 +382,27 @@ function formatDateRange(start, end) {
       month: "short",
       year: "numeric"
     });
-  
-  
-// ✅ NEW: proper multi-day handling
-if (!sameDay) {
+  }
+
+  // ✅ Multi-day range (your missing case)
+  if (!sameDay) {
+    return `${s.toLocaleDateString(undefined, {
+      day: "numeric",
+      month: "short"
+    })} → ${e.toLocaleDateString(undefined, {
+      day: "numeric",
+      month: "short",
+      year: "numeric"
+    })}`;
+  }
+
+  // ✅ Timed same-day event
   return `${s.toLocaleDateString(undefined, {
     day: "numeric",
     month: "short"
-  })} → ${e.toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric"
-  })}`;
+  })} ${s.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - ${e.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
 }
 
-// timed same-day (fallback)
-return `${s.toLocaleDateString(undefined, {
-  day: "numeric",
-  month: "short"
-})} ${s.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - ${e.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
 
 
   const sameDay = s.toDateString() === e.toDateString();
