@@ -376,7 +376,26 @@ function formatDateRange(start, end) {
       month: "short",
       year: "numeric"
     });
-  }
+  
+  
+// ✅ NEW: proper multi-day handling
+if (!sameDay) {
+  return `${s.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short"
+  })} → ${e.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric"
+  })}`;
+}
+
+// timed same-day (fallback)
+return `${s.toLocaleDateString(undefined, {
+  day: "numeric",
+  month: "short"
+})} ${s.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - ${e.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+
 
   const sameDay = s.toDateString() === e.toDateString();
 
