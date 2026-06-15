@@ -30,6 +30,7 @@ const els = {
   newEventBtn: document.getElementById("newEventBtn"),
   search: document.getElementById("searchInput"),
   allDay: document.getElementById("allDayInput"),
+  allMonth: document.getElementById("allMonthInput"),
   important: document.getElementById("importantInput"),
 };
 
@@ -46,7 +47,15 @@ function init() {
   els.deleteBtn.onclick = deleteEvent;
   document.getElementById("backupBtn").onclick = downloadBackup;
 
-  // ✅ All-day toggle
+  
+  els.allMonth.onchange = () => {
+    if (els.allMonth.checked) {
+      els.allDay.checked = false;
+      els.start.type = "date";
+      els.end.type = "date";
+  }
+};
+
   els.allDay.onchange = () => {
     const type = els.allDay.checked ? "date" : "datetime-local";
     els.start.type = type;
@@ -236,6 +245,17 @@ function openEditModal(e) {
   const startDate = new Date(e.start_at);
   const endDate = new Date(e.end_at);
 
+const isAllMonth =
+  s.getDate() === 1 &&
+  e.getDate() >= 28;
+
+if (isAllMonth) {
+  return s.toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric"
+  });
+}
+
   const isAllDay =
     startDate.getHours() === 0 &&
     startDate.getMinutes() === 0 &&
@@ -272,14 +292,26 @@ async function saveEvent(e) {
   let end = els.end.value;
 
   // ✅ Step 2: handle all-day vs timed
-  if (els.allDay.checked) {
-    start = new Date(start + "T00:00").toISOString();
-    end = new Date(end + "T23:59").toISOString();
-  } else {
-    start = new Date(start).toISOString();
-    end = new Date(end).toISOString();
-  }
+if (els.allMonth.checked) {
+  const startDate = new Date(els.start.value);
 
+  const year = startDate.getFullYear();
+  const month = startDate.getMonth();
+
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+
+  start = new Date(firstDay).toISOString();
+  end = new Date(lastDay.setHours(23, 59, 59)).toISOString();
+
+} else if (els.allDay.checked) {
+  start = new Date(start + "T00:00").toISOString();
+  end = new Date(end + "T23:59").toISOString();
+
+} else {
+  start = new Date(start).toISOString();
+  end = new Date(end).toISOString();
+}
   // ✅ Step 3: build event AFTER processing
   const event = {
     title: els.title.value,
