@@ -1,18 +1,26 @@
+// ==============================
+// Supabase Setup
+// ==============================
 const SUPABASE_URL = "https://jrzqppjsubpzoynyqsjy.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyenFwcGpzdWJwem95bnlxc2p5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjA3ODksImV4cCI6MjA5NjczNjc4OX0.gXhE8iqIG5ZsagBSXouBTVqU-a_3mnsuL1Byb_ZqiFs";
+const SUPABASE_ANON_KEY = "YOUR_KEY_HERE";
 
 const supabaseClient = window.supabase.createClient(
-  "https://jrzqppjsubpzoynyqsjy.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyenFwcGpzdWJwem95bnlxc2p5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjA3ODksImV4cCI6MjA5NjczNjc4OX0.gXhE8iqIG5ZsagBSXouBTVqU-a_3mnsuL1Byb_ZqiFs"
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
 );
 
+// ==============================
+// State
+// ==============================
 const state = {
   events: [],
   filteredEvents: [],
   showImportantOnly: false
 };
 
-
+// ==============================
+// DOM Elements
+// ==============================
 const els = {
   container: document.getElementById("monthView"),
   modal: document.getElementById("eventModal"),
@@ -20,8 +28,8 @@ const els = {
   eventId: document.getElementById("eventId"),
   title: document.getElementById("titleInput"),
   details: document.getElementById("detailsInput"),
-  lead: document.getElementById("leadInput"),       
-  contact: document.getElementById("contactInput"), 
+  lead: document.getElementById("leadInput"),
+  contact: document.getElementById("contactInput"),
   note: document.getElementById("noteInput"),
   start: document.getElementById("startInput"),
   end: document.getElementById("endInput"),
@@ -34,12 +42,12 @@ const els = {
   important: document.getElementById("importantInput"),
 };
 
+// ==============================
+// Init
+// ==============================
 init();
 
 function init() {
-
-  // 🔹 START OF INIT
-
   fetchEvents();
 
   els.newEventBtn.onclick = openCreateModal;
@@ -47,31 +55,35 @@ function init() {
   els.deleteBtn.onclick = deleteEvent;
   document.getElementById("backupBtn").onclick = downloadBackup;
 
-  
+  // All-month toggle
   els.allMonth.onchange = () => {
     if (els.allMonth.checked) {
       els.allDay.checked = false;
       els.start.type = "date";
       els.end.type = "date";
-  }
-};
+    }
+  };
 
+  // All-day toggle
   els.allDay.onchange = () => {
+    if (els.allDay.checked) {
+      els.allMonth.checked = false;
+    }
+
     const type = els.allDay.checked ? "date" : "datetime-local";
     els.start.type = type;
     els.end.type = type;
   };
 
-  // ✅ Search (uses shared filter system)
+  // Search
   els.search.addEventListener("input", applyFilters);
 
-  // ✅ Important filter button
+  // Important filter button
   const btn = document.getElementById("importantFilterBtn");
 
   btn.onclick = () => {
     state.showImportantOnly = !state.showImportantOnly;
 
-    // visual state
     btn.classList.toggle("active");
 
     btn.textContent = state.showImportantOnly
@@ -80,11 +92,11 @@ function init() {
 
     applyFilters();
   };
-
-  // 🔹 END OF INIT
-
 }
 
+// ==============================
+// Filtering
+// ==============================
 function applyFilters() {
   const query = els.search.value.toLowerCase();
 
@@ -103,6 +115,9 @@ function applyFilters() {
   render();
 }
 
+// ==============================
+// Fetch Data
+// ==============================
 async function fetchEvents() {
   const { data } = await supabaseClient
     .from("events")
@@ -113,6 +128,9 @@ async function fetchEvents() {
   applyFilters();
 }
 
+// ==============================
+// Render
+// ==============================
 function render() {
   els.container.innerHTML = "";
 
@@ -120,24 +138,25 @@ function render() {
 
   state.filteredEvents.forEach(e => {
     const d = new Date(e.start_at);
-    const m = d.toLocaleString('default', { month: 'long' });
+    const m = d.toLocaleString("default", { month: "long" });
 
     if (!months[m]) months[m] = [];
     months[m].push(e);
   });
 
   Object.entries(months).forEach(([month, events]) => {
+
+    // sort important first
     events.sort((a, b) => {
-    if (a.is_important && !b.is_important) return -1;
-    if (!a.is_important && b.is_important) return 1;
-    return new Date(a.start_at) - new Date(b.start_at);
-});
+      if (a.is_important && !b.is_important) return -1;
+      if (!a.is_important && b.is_important) return 1;
+      return new Date(a.start_at) - new Date(b.start_at);
+    });
+
     const section = document.createElement("div");
     section.className = "month";
-
     section.innerHTML = `<h2>${month}</h2>`;
 
-    // click empty month space to add event
     section.onclick = (e) => {
       if (e.target.closest(".event-row")) return;
       openCreateModal();
@@ -150,61 +169,59 @@ function render() {
 
       if (ev.is_important) {
         row.classList.add("important");
-}
-
+      }
 
       row.innerHTML = `
-      <div>
-        <div class="event-title">
-          ${ev.is_important ? "📌 " : ""}${ev.title}
+        <div>
+          <div class="event-title">
+            ${ev.is_important ? "📌 " : ""}${ev.title}
+          </div>
+          <div class="event-date">
+            ${formatDateRange(ev.start_at, ev.end_at)}
+          </div>
         </div>
 
-        <div class="event-date">
-          ${formatDateRange(ev.start_at, ev.end_at)}
-        </div>
-      </div>
-
-      <div>${ev.details || ""}</div>
-      <div>${ev.lead || ""}</div>
-      <div>${ev.contact || ""}</div>
-    
-
+        <div>${ev.details || ""}</div>
+        <div>${ev.lead || ""}</div>
+        <div>${ev.contact || ""}</div>
 
         ${ev.updated_at ? `
-          <div class="last-updated">Updated ${timeAgo(ev.updated_at)}</div>
-` : ""}
-        
+          <div class="last-updated">
+            Updated ${timeAgo(ev.updated_at)}
+          </div>
+        ` : ""}
+
         ${ev.note ? `
           <div class="event-note-toggle">Show note ▼</div>
           <div class="event-note collapsed">
             <span class="note-text">${ev.note}</span>
-           </div>
-` : ""}
-`;
+          </div>
+        ` : ""}
+      `;
 
-// ✅ separate handler for note toggle
-const toggle = row.querySelector(".event-note-toggle");
+      // Note toggle
+      const toggle = row.querySelector(".event-note-toggle");
 
-if (toggle) {
-  toggle.addEventListener("click", (e) => {
-    e.stopPropagation();  // ✅ stops modal opening
+      if (toggle) {
+        toggle.addEventListener("click", (e) => {
+          e.stopPropagation();
 
-    const note = row.querySelector(".event-note");
-    const isExpanded = note.classList.contains("expanded");
+          const note = row.querySelector(".event-note");
+          const isExpanded = note.classList.contains("expanded");
 
-    note.classList.toggle("expanded");
-    note.classList.toggle("collapsed");
+          note.classList.toggle("expanded");
+          note.classList.toggle("collapsed");
 
-    toggle.textContent = isExpanded
-      ? "Show note ▼"
-      : "Hide note ▲";
-  });
-}  
+          toggle.textContent = isExpanded
+            ? "Show note ▼"
+            : "Hide note ▲";
+        });
+      }
 
-      row.onclick = (e) => {
-        e.stopPropagation();
+      // ✅ click to edit
+      row.addEventListener("click", () => {
         openEditModal(ev);
-      };
+      });
 
       section.appendChild(row);
     });
@@ -213,63 +230,52 @@ if (toggle) {
   });
 }
 
+// ==============================
+// Modal Logic
+// ==============================
 function openCreateModal() {
   els.form.reset();
   els.eventId.value = "";
 
   els.allDay.checked = false;
-  els.allDay.onchange(); // ✅ ensures correct input type
+  els.allMonth.checked = false;
+  els.allDay.onchange();
 
   els.modal.showModal();
-}
-
-function toLocalInputValue(utcString) {
-  const date = new Date(utcString);
-
-  const offset = date.getTimezoneOffset();
-  const local = new Date(date.getTime() - offset * 60000);
-
-  return local.toISOString().slice(0, 16);
 }
 
 function openEditModal(e) {
   els.eventId.value = e.id;
   els.title.value = e.title;
+  els.details.value = e.details || "";
   els.lead.value = e.lead || "";
   els.contact.value = e.contact || "";
   els.note.value = e.note || "";
-  els.details.value = e.details || "";
   els.important.checked = e.is_important || false;
 
-  // ✅ Detect if event is all-day
   const startDate = new Date(e.start_at);
   const endDate = new Date(e.end_at);
 
-const isAllMonth =
-  s.getDate() === 1 &&
-  e.getDate() >= 28;
-
-if (isAllMonth) {
-  return s.toLocaleDateString(undefined, {
-    month: "long",
-    year: "numeric"
-  });
-}
+  const isAllMonth =
+    startDate.getDate() === 1 &&
+    endDate.getDate() >= 28;
 
   const isAllDay =
     startDate.getHours() === 0 &&
     startDate.getMinutes() === 0 &&
     endDate.getHours() >= 23;
 
-  // ✅ Set checkbox
-  els.allDay.checked = isAllDay;
+  els.allMonth.checked = isAllMonth;
+  els.allDay.checked = !isAllMonth && isAllDay;
 
-  // ✅ Trigger input type change (date vs datetime)
-  els.allDay.onchange();
+  if (els.allMonth.checked) {
+    els.start.type = "date";
+    els.end.type = "date";
+  } else {
+    els.allDay.onchange();
+  }
 
-  // ✅ Set values AFTER type is set
-  if (isAllDay) {
-    // date-only format: YYYY-MM-DD
+  if (isAllMonth || isAllDay) {
     els.start.value = startDate.toISOString().slice(0, 10);
     els.end.value = endDate.toISOString().slice(0, 10);
   } else {
@@ -284,98 +290,81 @@ function closeModal() {
   els.modal.close();
 }
 
+// ==============================
+// Save / Delete
+// ==============================
 async function saveEvent(e) {
   e.preventDefault();
 
-  // ✅ Step 1: get raw values FIRST
   let start = els.start.value;
   let end = els.end.value;
 
-  // ✅ Step 2: handle all-day vs timed
-if (els.allMonth.checked) {
-  const startDate = new Date(els.start.value);
+  if (els.allMonth.checked) {
+    const startDate = new Date(start);
+    const year = startDate.getFullYear();
+    const month = startDate.getMonth();
 
-  const year = startDate.getFullYear();
-  const month = startDate.getMonth();
+    const first = new Date(year, month, 1);
+    const last = new Date(year, month + 1, 0);
 
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
+    start = new Date(first).toISOString();
+    end = new Date(last.setHours(23, 59, 59)).toISOString();
 
-  start = new Date(firstDay).toISOString();
-  end = new Date(lastDay.setHours(23, 59, 59)).toISOString();
+  } else if (els.allDay.checked) {
+    start = new Date(start + "T00:00").toISOString();
+    end = new Date(end + "T23:59").toISOString();
 
-} else if (els.allDay.checked) {
-  start = new Date(start + "T00:00").toISOString();
-  end = new Date(end + "T23:59").toISOString();
+  } else {
+    start = new Date(start).toISOString();
+    end = new Date(end).toISOString();
+  }
 
-} else {
-  start = new Date(start).toISOString();
-  end = new Date(end).toISOString();
-}
-  // ✅ Step 3: build event AFTER processing
   const event = {
     title: els.title.value,
     details: els.details.value,
     lead: els.lead.value,
     contact: els.contact.value,
     note: els.note.value,
-
     start_at: start,
     end_at: end,
     color: els.color.value,
     is_important: els.important.checked
   };
 
-  // ✅ Step 4: save to Supabase
-  try {
-    if (els.eventId.value) {
-      await supabaseClient.from("events")
-        .update(event)
-        .eq("id", els.eventId.value);
-    } else {
-      await supabaseClient.from("events")
-        .insert([event]);
-    }
-
-    showToast("Saved ✅");
-
-  } catch (err) {
-    showToast("Save failed ❌", true);
+  if (els.eventId.value) {
+    await supabaseClient.from("events").update(event).eq("id", els.eventId.value);
+  } else {
+    await supabaseClient.from("events").insert([event]);
   }
 
-  // ✅ Step 5: refresh + close
   closeModal();
   fetchEvents();
 }
 
 async function deleteEvent() {
-  await supabaseClient
-    .from("events")
-    .delete()
-    .eq("id", els.eventId.value);
-
+  await supabaseClient.from("events").delete().eq("id", els.eventId.value);
   closeModal();
   fetchEvents();
 }
 
-function downloadBackup() {
-  const dataStr = JSON.stringify(state.events, null, 2);
-
-  const blob = new Blob([dataStr], { type: "application/json" });
-
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "events-backup.json";
-  a.click();
-}
-
+// ==============================
+// Helpers
+// ==============================
 function formatDateRange(start, end) {
   const s = new Date(start);
   const e = new Date(end);
 
-  const sameDay = s.toDateString() === e.toDateString();
+  const isAllMonth =
+    s.getDate() === 1 &&
+    e.getDate() >= 28;
 
-  // ✅ FIXED operators
+  if (isAllMonth) {
+    return s.toLocaleDateString(undefined, {
+      month: "long",
+      year: "numeric"
+    });
+  }
+
   const isAllDay =
     s.getHours() === 0 &&
     s.getMinutes() === 0 &&
@@ -389,28 +378,24 @@ function formatDateRange(start, end) {
     });
   }
 
+  const sameDay = s.toDateString() === e.toDateString();
+
   if (sameDay) {
     return `${s.toLocaleDateString(undefined, {
       day: "numeric",
       month: "short"
-    })} 
-    ${s.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - 
-    ${e.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+    })} ${s.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - ${e.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
   }
 
   return `${s.toLocaleString()} → ${e.toLocaleString()}`;
 }
 
-function showToast(msg, error = false) {
-  const t = document.getElementById("toast");
-  t.textContent = msg;
-  t.style.background = error ? "#e74c3c" : "#2ecc71";
-
-  t.classList.remove("hidden");
-
-  setTimeout(() => {
-    t.classList.add("hidden");
-  }, 2000);
+function toLocalInputValue(utc) {
+  const d = new Date(utc);
+  const offset = d.getTimezoneOffset();
+  return new Date(d.getTime() - offset * 60000)
+    .toISOString()
+    .slice(0, 16);
 }
 
 function timeAgo(date) {
@@ -432,3 +417,13 @@ function timeAgo(date) {
   return "now";
 }
 
+function downloadBackup() {
+  const blob = new Blob([JSON.stringify(state.events, null, 2)], {
+    type: "application/json"
+  });
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "events-backup.json";
+  a.click();
+}
