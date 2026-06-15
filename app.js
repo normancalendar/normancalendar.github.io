@@ -6,7 +6,12 @@ const supabaseClient = window.supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyenFwcGpzdWJwem95bnlxc2p5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjA3ODksImV4cCI6MjA5NjczNjc4OX0.gXhE8iqIG5ZsagBSXouBTVqU-a_3mnsuL1Byb_ZqiFs"
 );
 
-const state = { events: [], filteredEvents: [] };
+const state = {
+  events: [],
+  filteredEvents: [],
+  showImportantOnly: false
+};
+
 
 const els = {
   container: document.getElementById("monthView"),
@@ -31,6 +36,9 @@ const els = {
 init();
 
 function init() {
+
+  // 🔹 START OF INIT
+
   fetchEvents();
 
   els.newEventBtn.onclick = openCreateModal;
@@ -38,26 +46,55 @@ function init() {
   els.deleteBtn.onclick = deleteEvent;
   document.getElementById("backupBtn").onclick = downloadBackup;
 
+  // ✅ All-day toggle
   els.allDay.onchange = () => {
     const type = els.allDay.checked ? "date" : "datetime-local";
     els.start.type = type;
     els.end.type = type;
   };
 
-  els.search.addEventListener("input", (e) => {
-    const q = e.target.value.toLowerCase();
+  // ✅ Search (uses shared filter system)
+  els.search.addEventListener("input", applyFilters);
 
-    state.filteredEvents = state.events.filter(ev =>
-      ev.title.toLowerCase().includes(q) ||
-      (ev.details || "").toLowerCase().includes(q) ||
-      (ev.lead || "").toLowerCase().includes(q)
-    );
+  // ✅ Important filter button
+  const btn = document.getElementById("importantFilterBtn");
 
-    render();
+  btn.onclick = () => {
+    state.showImportantOnly = !state.showImportantOnly;
+
+    // visual state
+    btn.classList.toggle("active");
+
+    btn.textContent = state.showImportantOnly
+      ? "Showing Important ✅"
+      : "Show Important Only";
+
+    applyFilters();
+  };
+
+  // 🔹 END OF INIT
+
+}
+
+function applyFilters() {
+  const query = els.search.value.toLowerCase();
+
+  state.filteredEvents = state.events.filter(ev => {
+    const matchesSearch =
+      ev.title.toLowerCase().includes(query) ||
+      (ev.details || "").toLowerCase().includes(query) ||
+      (ev.lead || "").toLowerCase().includes(query);
+
+    const matchesImportant =
+      !state.showImportantOnly || ev.is_important;
+
+    return matchesSearch && matchesImportant;
   });
 
-} // ✅ THIS closing brace is critical
+  render();
+}
 
+} 
 async function fetchEvents() {
   const { data } = await supabaseClient
     .from("events")
@@ -65,8 +102,7 @@ async function fetchEvents() {
     .order("start_at");
 
   state.events = data || [];
-  state.filteredEvents = state.events;
-  render();
+  applyFilters();
 }
 
 function render() {
