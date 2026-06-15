@@ -109,12 +109,12 @@ function render() {
 }
 
 
-      row.innerHTML = `       
+      row.innerHTML = `
       <div>
-        <div class="event-title">${ev.title}</div>
+        <div class="event-title">
           ${ev.is_important ? "📌 " : ""}${ev.title}
         </div>
-        
+
         <div class="event-date">
           ${formatDateRange(ev.start_at, ev.end_at)}
         </div>
