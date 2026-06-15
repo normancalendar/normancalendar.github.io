@@ -290,3 +290,9 @@ input {
   align-items: center;
   flex-wrap: wrap;
 }
+
+.all-day-toggle,
+label {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
