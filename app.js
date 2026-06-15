@@ -87,6 +87,7 @@ function render() {
     events.forEach(ev => {
       const row = document.createElement("div");
       row.className = "event-row";
+      row.style.borderLeftColor = ev.color || "#01696f";
 
       row.innerHTML = `
         <div>${ev.title}</div>
