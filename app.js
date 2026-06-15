@@ -6,7 +6,7 @@ const supabaseClient = window.supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyenFwcGpzdWJwem95bnlxc2p5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjA3ODksImV4cCI6MjA5NjczNjc4OX0.gXhE8iqIG5ZsagBSXouBTVqU-a_3mnsuL1Byb_ZqiFs"
 );
 
-const state = { events: [] };
+const state = { events: [], filteredEvents: [] };
 
 const els = {
   container: document.getElementById("monthView"),
@@ -22,7 +22,8 @@ const els = {
   end: document.getElementById("endInput"),
   color: document.getElementById("colorInput"),
   deleteBtn: document.getElementById("deleteBtn"),
-  newEventBtn: document.getElementById("newEventBtn")
+  newEventBtn: document.getElementById("newEventBtn"),
+  search: document.getElementById("searchInput")
 };
 
 init();
@@ -35,6 +36,18 @@ function init() {
   document.getElementById("backupBtn").onclick = downloadBackup;
 }
 
+els.search.addEventListener("input", (e) => {
+  const q = e.target.value.toLowerCase();
+
+  state.filteredEvents = state.events.filter(ev =>
+    ev.title.toLowerCase().includes(q) ||
+    (ev.details || "").toLowerCase().includes(q) ||
+    (ev.lead || "").toLowerCase().includes(q)
+  );
+
+  render();
+});
+
 async function fetchEvents() {
   const { data } = await supabaseClient
     .from("events")
@@ -42,6 +55,7 @@ async function fetchEvents() {
     .order("start_at");
 
   state.events = data || [];
+  state.filteredEvents = state.events;
   render();
 }
 
@@ -50,7 +64,7 @@ function render() {
 
   const months = {};
 
-  state.events.forEach(e => {
+  state.filteredEvents.forEach(e => {
     const d = new Date(e.start_at);
     const m = d.toLocaleString('default', { month: 'long' });
 
@@ -80,6 +94,10 @@ function render() {
         <div>${ev.lead || ""}</div>       
         <div>${ev.contact || ""}</div>    
 
+
+        ${ev.updated_at ? `
+          <div class="last-updated">Updated ${timeAgo(ev.updated_at)}</div>
+` : ""}
         
         ${ev.note ? `
           <div class="event-note-toggle">Show note ▼</div>
@@ -170,6 +188,7 @@ async function saveEvent(e) {
     color: els.color.value
   };
 
+try {
   if (els.eventId.value) {
     await supabaseClient.from("events")
       .update(event)
@@ -179,8 +198,14 @@ async function saveEvent(e) {
       .insert([event]);
   }
 
-  closeModal();
-  fetchEvents();
+  showToast("Saved ✅");
+
+} catch (err) {
+  showToast("Save failed ❌", true);
+}
+
+closeModal();
+fetchEvents();
 }
 
 async function deleteEvent() {
@@ -202,4 +227,35 @@ function downloadBackup() {
   a.href = URL.createObjectURL(blob);
   a.download = "events-backup.json";
   a.click();
+}
+
+function showToast(msg, error = false) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.style.background = error ? "#e74c3c" : "#2ecc71";
+
+  t.classList.remove("hidden");
+
+  setTimeout(() => {
+    t.classList.add("hidden");
+  }, 2000);
+}
+
+function timeAgo(date) {
+  const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+
+  const intervals = [
+    { label: "y", s: 31536000 },
+    { label: "mo", s: 2592000 },
+    { label: "d", s: 86400 },
+    { label: "h", s: 3600 },
+    { label: "m", s: 60 }
+  ];
+
+  for (let i of intervals) {
+    const count = Math.floor(seconds / i.s);
+    if (count > 0) return `${count}${i.label} ago`;
+  }
+
+  return "now";
 }
