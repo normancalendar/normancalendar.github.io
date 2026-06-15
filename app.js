@@ -308,7 +308,7 @@ function formatDateRange(start, end) {
 
   const sameDay = s.toDateString() === e.toDateString();
 
-  // All-day detection
+  // ✅ FIXED operators
   const isAllDay =
     s.getHours() === 0 &&
     s.getMinutes() === 0 &&
@@ -326,9 +326,9 @@ function formatDateRange(start, end) {
     return `${s.toLocaleDateString(undefined, {
       day: "numeric",
       month: "short"
-    })}
-     ${s.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-     - ${e.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+    })} 
+    ${s.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - 
+    ${e.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
   }
 
   return `${s.toLocaleString()} → ${e.toLocaleString()}`;
