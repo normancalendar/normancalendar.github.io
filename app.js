@@ -38,25 +38,25 @@ function init() {
   els.deleteBtn.onclick = deleteEvent;
   document.getElementById("backupBtn").onclick = downloadBackup;
 
-  // ✅ MOVE THIS INSIDE
   els.allDay.onchange = () => {
     const type = els.allDay.checked ? "date" : "datetime-local";
     els.start.type = type;
     els.end.type = type;
   };
 
-  // your search listener is fine here too
- els.search.addEventListener("input", (e) => {
-  const q = e.target.value.toLowerCase();
+  els.search.addEventListener("input", (e) => {
+    const q = e.target.value.toLowerCase();
 
-  state.filteredEvents = state.events.filter(ev =>
-    ev.title.toLowerCase().includes(q) ||
-    (ev.details || "").toLowerCase().includes(q) ||
-    (ev.lead || "").toLowerCase().includes(q)
-  );
+    state.filteredEvents = state.events.filter(ev =>
+      ev.title.toLowerCase().includes(q) ||
+      (ev.details || "").toLowerCase().includes(q) ||
+      (ev.lead || "").toLowerCase().includes(q)
+    );
 
-  render();
-});
+    render();
+  });
+
+} // ✅ THIS closing brace is critical
 
 async function fetchEvents() {
   const { data } = await supabaseClient
