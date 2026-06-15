@@ -46,21 +46,33 @@
   <form id="eventForm">
     <input type="hidden" id="eventId">
 
+    <!-- Main fields -->
     <input id="titleInput" placeholder="Title" required />
     <input id="detailsInput" placeholder="Venue / Location" />
     <input id="leadInput" placeholder="Lead Organisation" />
-    <input id="contactInput" placeholder="Contact Info" />  
+    <input id="contactInput" placeholder="Contact Info" />
     <input id="noteInput" placeholder="Note (optional)" />
-    
-    <label>
+
+    <!-- All-day toggle -->
+    <label class="all-day-toggle">
       <input type="checkbox" id="allDayInput">
       All day event
     </label>
-    
+
+    <!-- Date inputs -->
     <input id="startInput" type="datetime-local" required />
     <input id="endInput" type="datetime-local" required />
+
+    <!-- Important flag -->
+    <label class="important-toggle">
+      <input type="checkbox" id="importantInput">
+      Mark as important
+    </label>
+
+    <!-- Colour -->
     <input id="colorInput" type="color" value="#01696f"/>
 
+    <!-- Actions -->
     <button type="submit">Save</button>
     <button type="button" id="deleteBtn">Delete</button>
   </form>
