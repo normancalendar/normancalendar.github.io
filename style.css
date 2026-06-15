@@ -181,6 +181,12 @@ button:hover {
   font-size: 0.9rem;
 }
 
+.event-date {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
 /* ===== MODAL ===== */
 
 dialog {
