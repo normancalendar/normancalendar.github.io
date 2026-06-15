@@ -94,7 +94,6 @@ function applyFilters() {
   render();
 }
 
-} 
 async function fetchEvents() {
   const { data } = await supabaseClient
     .from("events")
