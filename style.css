@@ -267,4 +267,14 @@ input {
   border-radius: var(--radius);
   border: 1px solid var(--border);
 }
+/* important events */
+.event-row.important {
+  border-left-width: 6px;
+  box-shadow: 0 0 0 2px var(--accent);
+}
 
+/* optional subtle toggle styling */
+.important-toggle {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
