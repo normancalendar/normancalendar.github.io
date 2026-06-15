@@ -90,6 +90,8 @@ function render() {
 
       row.innerHTML = `
         <div>${ev.title}</div>
+          <div class="event-date">
+             ${formatDateRange(ev.start_at, ev.end_at)}
         <div>${ev.details || ""}</div>     
         <div>${ev.lead || ""}</div>       
         <div>${ev.contact || ""}</div>    
@@ -222,6 +224,21 @@ function downloadBackup() {
   a.href = URL.createObjectURL(blob);
   a.download = "events-backup.json";
   a.click();
+}
+
+function formatDateRange(start, end) {
+  const s = new Date(start);
+  const e = new Date(end);
+
+  const options = {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  };
+
+  return `${s.toLocaleString(undefined, options)} → ${e.toLocaleString(undefined, options)}`;
 }
 
 function showToast(msg, error = false) {
