@@ -107,11 +107,6 @@ function render() {
 ` : ""}
 `;
 
-// ✅ ONLY this handles opening modal
-row.onclick = () => {
-  openEditModal(ev);
-};
-
 // ✅ separate handler for note toggle
 const toggle = row.querySelector(".event-note-toggle");
 
