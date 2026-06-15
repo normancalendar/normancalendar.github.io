@@ -186,8 +186,8 @@ async function saveEvent(e) {
     lead: els.lead.value,          
     contact: els.contact.value, 
     note: els.note.value,
-    start_at: els.start.value,
-    end_at: els.end.value,
+    start_at: toUTCString(els.start.value),
+    end_at: toUTCString(els.end.value),
     color: els.color.value
   };
 
@@ -276,4 +276,13 @@ function timeAgo(date) {
   }
 
   return "now";
+}
+
+function toUTCString(localValue) {
+  const localDate = new Date(localValue);
+
+  const offset = localDate.getTimezoneOffset();
+  const utc = new Date(localDate.getTime() + offset * 60000);
+
+  return utc.toISOString();
 }
