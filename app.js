@@ -89,13 +89,18 @@ function render() {
       row.className = "event-row";
       row.style.borderLeftColor = ev.color || "#01696f";
 
-      row.innerHTML = `
-        <div>${ev.title}</div>
-          <div class="event-date">
-             ${formatDateRange(ev.start_at, ev.end_at)}
-        <div>${ev.details || ""}</div>     
-        <div>${ev.lead || ""}</div>       
-        <div>${ev.contact || ""}</div>    
+      row.innerHTML = `       
+      <div>
+        <div class="event-title">${ev.title}</div>
+        <div class="event-date">
+          ${formatDateRange(ev.start_at, ev.end_at)}
+        </div>
+      </div>
+
+      <div>${ev.details || ""}</div>
+      <div>${ev.lead || ""}</div>
+      <div>${ev.contact || ""}</div>
+    
 
 
         ${ev.updated_at ? `
