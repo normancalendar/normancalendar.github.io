@@ -23,20 +23,30 @@ const els = {
   color: document.getElementById("colorInput"),
   deleteBtn: document.getElementById("deleteBtn"),
   newEventBtn: document.getElementById("newEventBtn"),
-  search: document.getElementById("searchInput")
+  search: document.getElementById("searchInput"),
+  allDay: document.getElementById("allDayInput"),
+  important: document.getElementById("importantInput"),
 };
 
 init();
 
 function init() {
   fetchEvents();
+
   els.newEventBtn.onclick = openCreateModal;
   els.form.onsubmit = saveEvent;
   els.deleteBtn.onclick = deleteEvent;
   document.getElementById("backupBtn").onclick = downloadBackup;
-}
 
-els.search.addEventListener("input", (e) => {
+  // ✅ MOVE THIS INSIDE
+  els.allDay.onchange = () => {
+    const type = els.allDay.checked ? "date" : "datetime-local";
+    els.start.type = type;
+    els.end.type = type;
+  };
+
+  // your search listener is fine here too
+ els.search.addEventListener("input", (e) => {
   const q = e.target.value.toLowerCase();
 
   state.filteredEvents = state.events.filter(ev =>
@@ -73,6 +83,11 @@ function render() {
   });
 
   Object.entries(months).forEach(([month, events]) => {
+    events.sort((a, b) => {
+    if (a.is_important && !b.is_important) return -1;
+    if (!a.is_important && b.is_important) return 1;
+    return new Date(a.start_at) - new Date(b.start_at);
+});
     const section = document.createElement("div");
     section.className = "month";
 
@@ -89,9 +104,17 @@ function render() {
       row.className = "event-row";
       row.style.borderLeftColor = ev.color || "#01696f";
 
+      if (ev.is_important) {
+        row.classList.add("important");
+}
+
+
       row.innerHTML = `       
       <div>
         <div class="event-title">${ev.title}</div>
+          ${ev.is_important ? "📌 " : ""}${ev.title}
+        </div>
+        
         <div class="event-date">
           ${formatDateRange(ev.start_at, ev.end_at)}
         </div>
@@ -149,6 +172,10 @@ if (toggle) {
 function openCreateModal() {
   els.form.reset();
   els.eventId.value = "";
+
+  els.allDay.checked = false;
+  els.allDay.onchange(); // ✅ ensures correct input type
+
   els.modal.showModal();
 }
 
@@ -164,12 +191,37 @@ function toLocalInputValue(utcString) {
 function openEditModal(e) {
   els.eventId.value = e.id;
   els.title.value = e.title;
-  els.lead.value = e.lead || "";          
-  els.contact.value = e.contact || ""; 
+  els.lead.value = e.lead || "";
+  els.contact.value = e.contact || "";
   els.note.value = e.note || "";
   els.details.value = e.details || "";
-  els.start.value = toLocalInputValue(e.start_at); 
-  els.end.value = toLocalInputValue(e.end_at);      
+  els.important.checked = e.is_important || false;
+
+  // ✅ Detect if event is all-day
+  const startDate = new Date(e.start_at);
+  const endDate = new Date(e.end_at);
+
+  const isAllDay =
+    startDate.getHours() === 0 &&
+    startDate.getMinutes() === 0 &&
+    endDate.getHours() >= 23;
+
+  // ✅ Set checkbox
+  els.allDay.checked = isAllDay;
+
+  // ✅ Trigger input type change (date vs datetime)
+  els.allDay.onchange();
+
+  // ✅ Set values AFTER type is set
+  if (isAllDay) {
+    // date-only format: YYYY-MM-DD
+    els.start.value = startDate.toISOString().slice(0, 10);
+    els.end.value = endDate.toISOString().slice(0, 10);
+  } else {
+    els.start.value = toLocalInputValue(e.start_at);
+    els.end.value = toLocalInputValue(e.end_at);
+  }
+
   els.modal.showModal();
 }
 
@@ -180,35 +232,53 @@ function closeModal() {
 async function saveEvent(e) {
   e.preventDefault();
 
+  // ✅ Step 1: get raw values FIRST
+  let start = els.start.value;
+  let end = els.end.value;
+
+  // ✅ Step 2: handle all-day vs timed
+  if (els.allDay.checked) {
+    start = new Date(start + "T00:00").toISOString();
+    end = new Date(end + "T23:59").toISOString();
+  } else {
+    start = new Date(start).toISOString();
+    end = new Date(end).toISOString();
+  }
+
+  // ✅ Step 3: build event AFTER processing
   const event = {
     title: els.title.value,
     details: els.details.value,
-    lead: els.lead.value,          
-    contact: els.contact.value, 
+    lead: els.lead.value,
+    contact: els.contact.value,
     note: els.note.value,
-    start_at: new Date(els.start.value).toISOString(),
-    end_at: new Date(els.end.value).toISOString(),
-    color: els.color.value
+
+    start_at: start,
+    end_at: end,
+    color: els.color.value,
+    is_important: els.important.checked
   };
 
-try {
-  if (els.eventId.value) {
-    await supabaseClient.from("events")
-      .update(event)
-      .eq("id", els.eventId.value);
-  } else {
-    await supabaseClient.from("events")
-      .insert([event]);
+  // ✅ Step 4: save to Supabase
+  try {
+    if (els.eventId.value) {
+      await supabaseClient.from("events")
+        .update(event)
+        .eq("id", els.eventId.value);
+    } else {
+      await supabaseClient.from("events")
+        .insert([event]);
+    }
+
+    showToast("Saved ✅");
+
+  } catch (err) {
+    showToast("Save failed ❌", true);
   }
 
-  showToast("Saved ✅");
-
-} catch (err) {
-  showToast("Save failed ❌", true);
-}
-
-closeModal();
-fetchEvents();
+  // ✅ Step 5: refresh + close
+  closeModal();
+  fetchEvents();
 }
 
 async function deleteEvent() {
@@ -236,15 +306,32 @@ function formatDateRange(start, end) {
   const s = new Date(start);
   const e = new Date(end);
 
-  const options = {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  };
+  const sameDay = s.toDateString() === e.toDateString();
 
-  return `${s.toLocaleString(undefined, options)} → ${e.toLocaleString(undefined, options)}`;
+  // All-day detection
+  const isAllDay =
+    s.getHours() === 0 &&
+    s.getMinutes() === 0 &&
+    e.getHours() >= 23;
+
+  if (isAllDay) {
+    return s.toLocaleDateString(undefined, {
+      day: "numeric",
+      month: "short",
+      year: "numeric"
+    });
+  }
+
+  if (sameDay) {
+    return `${s.toLocaleDateString(undefined, {
+      day: "numeric",
+      month: "short"
+    })}
+     ${s.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+     - ${e.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+  }
+
+  return `${s.toLocaleString()} → ${e.toLocaleString()}`;
 }
 
 function showToast(msg, error = false) {
