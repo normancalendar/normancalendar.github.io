@@ -403,20 +403,6 @@ function formatDateRange(start, end) {
   })} ${s.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - ${e.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
 }
 
-
-
-  const sameDay = s.toDateString() === e.toDateString();
-
-  if (sameDay) {
-    return `${s.toLocaleDateString(undefined, {
-      day: "numeric",
-      month: "short"
-    })} ${s.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - ${e.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
-  }
-
-  return `${s.toLocaleString()} → ${e.toLocaleString()}`;
-}
-
 function toLocalInputValue(utc) {
   const d = new Date(utc);
   const offset = d.getTimezoneOffset();
