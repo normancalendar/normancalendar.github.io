@@ -333,11 +333,12 @@ if (els.eventId.value) {
   fetchEvents();
 }
 
-await fetch("https://calendar-api-norman-way.vercel.app/api/events", {
-  method: "DELETE",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ id: els.eventId.value })
-});
+async function deleteEvent() {
+  await fetch("https://calendar-api-norman-way.vercel.app/api/events", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id: els.eventId.value })
+  });
 
   closeModal();
   fetchEvents();
