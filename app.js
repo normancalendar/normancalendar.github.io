@@ -1,17 +1,3 @@
-// ==============================
-// Supabase Setup
-// ==============================
-const SUPABASE_URL = "https://jrzqppjsubpzoynyqsjy.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyenFwcGpzdWJwem95bnlxc2p5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjA3ODksImV4cCI6MjA5NjczNjc4OX0.gXhE8iqIG5ZsagBSXouBTVqU-a_3mnsuL1Byb_ZqiFs";
-
-const supabaseClient = window.supabase.createClient(
-  "https://jrzqppjsubpzoynyqsjy.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyenFwcGpzdWJwem95bnlxc2p5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjA3ODksImV4cCI6MjA5NjczNjc4OX0.gXhE8iqIG5ZsagBSXouBTVqU-a_3mnsuL1Byb_ZqiFs"
-);
-
-// ==============================
-// State
-// ==============================
 const state = {
   events: [],
   filteredEvents: [],
@@ -119,10 +105,8 @@ function applyFilters() {
 // Fetch Data
 // ==============================
 async function fetchEvents() {
-  const { data } = await supabaseClient
-    .from("events")
-    .select("*")
-    .order("start_at");
+  const res = await fetch("https://calendar-api-norman-way.vercel.app/api/events");
+  const data = await res.json();
 
   state.events = data || [];
   applyFilters();
@@ -331,18 +315,30 @@ async function saveEvent(e) {
     is_important: els.important.checked
   };
 
-  if (els.eventId.value) {
-    await supabaseClient.from("events").update(event).eq("id", els.eventId.value);
-  } else {
-    await supabaseClient.from("events").insert([event]);
-  }
+if (els.eventId.value) {
+  await fetch("https://calendar-api-norman-way.vercel.app/api/events", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...event, id: els.eventId.value })
+  });
+} else {
+  await fetch("https://calendar-api-norman-way.vercel.app/api/events", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(event)
+  });
+}
 
   closeModal();
   fetchEvents();
 }
 
-async function deleteEvent() {
-  await supabaseClient.from("events").delete().eq("id", els.eventId.value);
+await fetch("https://calendar-api-norman-way.vercel.app/api/events", {
+  method: "DELETE",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ id: els.eventId.value })
+});
+
   closeModal();
   fetchEvents();
 }
